@@ -21,8 +21,6 @@ CARD = """---
 language: id
 library_name: transformers
 base_model: indobenchmark/indobert-base-p1
-datasets:
-- USH BRImo Dataset (Mendeley Data, CC BY 4.0, doi:10.17632/7253k33f62.1)
 tags:
 - text-classification
 - multi-task
@@ -35,6 +33,9 @@ tags:
 One IndoBERT encoder with three heads that label an Indonesian mobile-banking app review with its
 **service aspect** (9 classes), **sentiment** (3) and **urgency** (kritis / tinggi / normal).
 Code, data pipeline and evaluation: https://github.com/HachiVin/Complaint-Triage-System
+
+Training data: USH BRImo Dataset, Mendeley Data V1, CC BY 4.0, doi:10.17632/7253k33f62.1
+(the `datasets` metadata field only accepts Hugging Face dataset ids, so it is cited here instead).
 
 This is not a plain `AutoModelForSequenceClassification` checkpoint: `encoder/` is the fine-tuned
 IndoBERT, `heads.pt` holds the three linear heads, and `model_meta.json` the label order. Load it with
