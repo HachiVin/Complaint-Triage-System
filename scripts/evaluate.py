@@ -73,7 +73,19 @@ def main() -> None:
             lines.append(f"| {name} | {f1('aspect')} | {f1('sentiment')} | {f1('urgency')} | {kr} | "
                          f"{m['needs_review_rate']:.1%} | {m['throughput_per_s']}/s | "
                          f"{m['latency_ms_single']['p50']} ms | {m['size_mb']} MB |")
+        n_urg = sum(r.urgency is not None for r in rows)
+        if n_urg:
+            n_kritis = sum(r.urgency == "kritis" for r in rows)
+            lines.append(f"Urgency is scored on the {n_urg} reviews with an urgency label ({n_kritis} kritis), "
+                         f"so one kritis review is worth {1 / max(n_kritis, 1):.0%} of kritis recall.")
         lines.append("")
+
+    provenance = Path(args.out) / "label_provenance.json"
+    if provenance.exists():
+        info = json.loads(provenance.read_text(encoding="utf-8"))
+        results["urgency_label_status"] = info.get("status")
+        lines += [f"> **Urgency labels: {info.get('status')}.** {info.get('method')}. "
+                  f"See `{provenance.as_posix()}`.", ""]
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

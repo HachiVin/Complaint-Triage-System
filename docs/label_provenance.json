@@ -1,0 +1,28 @@
+{
+  "status": "silver: not human-verified",
+  "method": "train/val: keyword rules and LLM second opinion agree; test period: LLM second opinion",
+  "second_opinion": "data/annotation/second_opinion.jsonl",
+  "counts": {
+    "agreed": 504,
+    "second_opinion_test": 122,
+    "skipped": 174
+  },
+  "labels_per_period": {
+    "test": {
+      "kritis": 11,
+      "tinggi": 58,
+      "normal": 53
+    },
+    "val": {
+      "kritis": 15,
+      "tinggi": 22,
+      "normal": 54
+    },
+    "train": {
+      "kritis": 105,
+      "tinggi": 103,
+      "normal": 205
+    }
+  },
+  "next_step": "human review of every test-period review in Label Studio, then `merge`"
+}
