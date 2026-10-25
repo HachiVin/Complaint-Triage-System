@@ -1,0 +1,6 @@
+# Training the IndoBERT multi-task model (Colab or a local GPU). In Docker and CI, torch comes from the
+# CPU-only index so the image does not carry CUDA libraries.
+-r requirements.txt
+torch==2.14.1
+transformers==5.20.2
+tokenizers==0.23.3

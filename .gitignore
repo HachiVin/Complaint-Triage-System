@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# secrets
+.env
+
+# raw and in-progress data stay on your machine; only data you are allowed to share is published
+data/raw/
+data/interim/
+data/processed/
+data/annotated/
+
+# model checkpoints are large; publish them as a release asset or on the Hugging Face Hub
+models/*
+!models/baseline/
+!models/README.md

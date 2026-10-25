@@ -1,0 +1,14 @@
+<!-- Label Studio: Create Project -> Labeling Setup -> Custom template -> paste this.
+     Import the JSON written by `python scripts/labelstudio.py sample ...`; the rule-based guess is pre-selected. -->
+<View>
+  <Header value="Seberapa mendesak ulasan ini harus dibaca tim CX hari ini?"/>
+  <Text name="text" value="$text"/>
+  <View style="color:#666;font-size:13px;margin:6px 0">
+    <Text name="meta" value="Aplikasi: $app · Rating: $rating · Aspek: $aspect · Sentimen: $sentiment · Kata pemicu: $rule_hits"/>
+  </View>
+  <Choices name="urgency" toName="text" choice="single" showInline="true" required="true">
+    <Choice value="kritis" hotkey="1" hint="Uang atau akun nasabah terdampak"/>
+    <Choice value="tinggi" hotkey="2" hint="Tidak bisa memakai layanan utama, uang belum terdampak"/>
+    <Choice value="normal" hotkey="3" hint="Saran, pujian, keluhan ringan"/>
+  </Choices>
+</View>

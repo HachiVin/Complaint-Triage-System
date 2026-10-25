@@ -1,0 +1,12 @@
+# API + baseline model + agent. Enough to serve the TF-IDF model without torch.
+# scikit-learn is pinned to the version the shipped model was trained with (joblib files are version-bound).
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+numpy==2.5.4
+scikit-learn==1.9.1
+joblib==1.6.0
+psycopg[binary,pool]==3.3.6
+langgraph==1.2.17
+langchain-core==1.7.0
+langchain-openai==1.7.2

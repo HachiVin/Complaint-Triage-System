@@ -1,0 +1,12 @@
+{
+  "kind": "baseline",
+  "version": "demo-synthetic",
+  "tasks": [
+    "aspect",
+    "sentiment",
+    "urgency"
+  ],
+  "train_size": 448,
+  "synthetic_data": true,
+  "note": "demo only, trained on fictional template reviews"
+}

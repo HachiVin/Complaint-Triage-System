@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+venv
+.env
+data/raw
+data/interim
+data/processed
+data/annotated
+data/agent_eval
+tests
+notebooks
+docs
+scripts
+**/__pycache__
+.pytest_cache
+.ruff_cache

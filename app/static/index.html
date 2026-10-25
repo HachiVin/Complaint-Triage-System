@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complaint Triage System: dasbor keluhan nasabah</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/vendor/chart-4.4.1.umd.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <span class="brand">Complaint Triage</span>
+    <div class="filters">
+      <label>Aplikasi <select id="app"></select></label>
+      <label>Periode
+        <select id="weeks"><option value="2">2 minggu</option><option value="4" selected>4 minggu</option>
+          <option value="8">8 minggu</option><option value="12">12 minggu</option></select>
+      </label>
+      <a href="/docs" class="link">API</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p id="demo-note" class="note" hidden></p>
+  <p id="period" class="muted small"></p>
+
+  <section class="kpis">
+    <div class="kpi"><span class="k-label">Ulasan</span><strong id="k-reviews">–</strong></div>
+    <div class="kpi"><span class="k-label">Sentimen negatif</span><strong id="k-neg">–</strong></div>
+    <div class="kpi danger"><span class="k-label">Keluhan kritis</span><strong id="k-kritis">–</strong>
+      <span id="k-kritis-delta" class="k-sub"></span></div>
+    <div class="kpi"><span class="k-label">Urgensi tinggi</span><strong id="k-tinggi">–</strong></div>
+    <div class="kpi"><span class="k-label">Rata-rata rating</span><strong id="k-rating">–</strong></div>
+    <div class="kpi"><span class="k-label">Perlu dicek manual</span><strong id="k-review">–</strong></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Keluhan per aspek</h2>
+      <p class="muted small">Jumlah ulasan negatif per aspek; angka merah = keluhan kritis.</p>
+      <ul id="aspects" class="bars"></ul>
+    </div>
+    <div class="card">
+      <h2>Tren keluhan mingguan</h2>
+      <p class="muted small">Ulasan negatif per minggu untuk empat aspek terbanyak.</p>
+      <div class="chart"><canvas id="trend" aria-label="Grafik tren keluhan mingguan" role="img"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head-row">
+      <h2>Antrean keluhan</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-urgency="kritis">Kritis</button>
+        <button type="button" class="tab" data-urgency="tinggi">Tinggi</button>
+      </div>
+    </div>
+    <p class="muted small">Ulasan terbaru dengan urgensi terpilih. Ubah label bila model salah; koreksi tersimpan
+      sebagai data latih berikutnya.</p>
+    <div class="table-wrap">
+      <table id="queue">
+        <thead><tr><th>Tanggal</th><th>Aspek</th><th>Rating</th><th>Ulasan</th><th>Versi</th><th>Urgensi</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Tanya data</h2>
+      <p class="muted small">Agent menjawab dengan menulis query SQL ke data ulasan. Query yang dipakai ditampilkan.</p>
+      <form id="ask-form" class="ask">
+        <input id="question" maxlength="500" placeholder="Contoh: kenapa keluhan transaksi naik 2 minggu terakhir? beri contoh">
+        <button type="submit" class="primary" id="ask-btn">Tanya</button>
+      </form>
+      <div class="suggest">
+        <button type="button" class="chip">Versi aplikasi mana yang paling banyak keluhan kritis?</button>
+        <button type="button" class="chip">Bandingkan keluhan per aspek antar aplikasi</button>
+      </div>
+      <div id="answer" class="answer" hidden></div>
+      <details id="sql" class="sql" hidden><summary>Query yang dijalankan</summary><pre></pre></details>
+    </div>
+    <div class="card">
+      <h2>Coba klasifikasi</h2>
+      <p class="muted small">Tempel satu ulasan atau keluhan.</p>
+      <form id="cls-form">
+        <textarea id="cls-text" rows="4" maxlength="3000"
+          placeholder="Transfer gagal tapi saldo terpotong, sudah 3 hari belum kembali"></textarea>
+        <button type="submit" class="primary">Klasifikasi</button>
+      </form>
+      <dl id="cls-out" class="cls-out" hidden></dl>
+    </div>
+  </section>
+  <p class="muted small foot">Model: <span id="model"></span> · Prediksi bisa salah; keluhan kritis tetap dibaca
+    manusia sebelum ditindaklanjuti.</p>
+</main>
+<script src="/static/app.js" defer></script>
+</body>
+</html>

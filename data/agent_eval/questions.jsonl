@@ -1,0 +1,5 @@
+{"id": "q01", "question": "Berapa jumlah ulasan dengan urgensi kritis dalam 7 hari terakhir data?", "gold_sql": "SELECT count(*) FROM v_reviews WHERE urgency = 'kritis' AND review_date > (SELECT max(review_date) FROM v_reviews) - 7"}
+{"id": "q02", "question": "Aspek apa yang paling banyak dikeluhkan (sentimen negatif) secara keseluruhan, dan berapa jumlah ulasannya?", "gold_sql": "SELECT count(*) FROM v_reviews WHERE sentiment = 'negatif' GROUP BY aspect ORDER BY count(*) DESC LIMIT 1"}
+{"id": "q03", "question": "Berapa persen ulasan yang bersentimen negatif?", "gold_sql": "SELECT round(avg((sentiment = 'negatif')::int)::numeric, 3) FROM v_reviews"}
+{"id": "q04", "question": "Berapa rata-rata rating ulasan dengan aspek kualitas transaksi?", "gold_sql": "SELECT round(avg(rating)::numeric, 2) FROM v_reviews WHERE aspect = 'kualitas_transaksi'"}
+{"id": "q05", "question": "Berapa banyak ulasan berurgensi kritis yang ditulis untuk versi aplikasi dengan keluhan kritis terbanyak?", "gold_sql": "SELECT count(*) FROM v_reviews WHERE urgency = 'kritis' AND app_version IS NOT NULL GROUP BY app_version ORDER BY count(*) DESC LIMIT 1"}
