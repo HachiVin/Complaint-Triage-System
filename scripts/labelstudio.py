@@ -4,9 +4,9 @@
 
        python scripts/labelstudio.py sample data/interim/brimo.jsonl data/interim/ls_urgency.json --n 800
 
-   Critical complaints are rare, so the sample over-represents negative reviews and reviews the rules
-   flag. That is fine for training; the test set's natural distribution is reported separately
-   (see docs/annotation_guide.md).
+   Critical complaints are rare, so the sample over-represents reviews the rules flag (20% kritis,
+   20% tinggi) and negative reviews (35%); the other 25% is drawn from the rest. That is fine for
+   training; the natural distribution is reported separately (see docs/annotation_guide.md).
 
 2. After annotating, export JSON from Label Studio and merge the labels back:
 
@@ -31,13 +31,18 @@ from complaint_triage.rules import urgency_by_rules  # noqa: E402
 def sample(src: str, dst: str, n: int, seed: int) -> None:
     rows = [r for r in load_jsonl(src) if not r.urgency]
     rng = random.Random(seed)
-    flagged = [r for r in rows if urgency_by_rules(r.text)[0] != "normal"]
+    rule = {r.id: urgency_by_rules(r.text)[0] for r in rows}
+    # Rules flag far more "tinggi" than "kritis" (about 7 to 1 on BRImo), so the two are sampled
+    # separately; otherwise the sample would hold only a few dozen likely-critical reviews.
+    flag_kritis = [r for r in rows if rule[r.id] == "kritis"]
+    flag_tinggi = [r for r in rows if rule[r.id] == "tinggi"]
+    flagged = flag_kritis + flag_tinggi
     flagged_ids = {r.id for r in flagged}
     negative = [r for r in rows if r.sentiment == "negatif" and r.id not in flagged_ids]
     negative_ids = {r.id for r in negative}
     rest = [r for r in rows if r.id not in flagged_ids and r.id not in negative_ids]
     picked = []
-    for pool, share in ((flagged, 0.4), (negative, 0.35), (rest, 0.25)):
+    for pool, share in ((flag_kritis, 0.2), (flag_tinggi, 0.2), (negative, 0.35), (rest, 0.25)):
         rng.shuffle(pool)
         picked += pool[: int(n * share)]
     if len(picked) < n:  # top up from whatever is left
@@ -49,9 +54,12 @@ def sample(src: str, dst: str, n: int, seed: int) -> None:
     tasks = []
     for r in picked:
         label, phrases = urgency_by_rules(r.text)
+        # One ready-made line of context: Label Studio's Text tag shows one field, not a template.
+        meta = (f"Aplikasi: {r.app} · Rating: {r.rating or '-'} · Aspek: {r.aspect or '-'} · "
+                f"Sentimen: {r.sentiment or '-'} · Kata pemicu: {', '.join(phrases) or '-'}")
         tasks.append({
-            "data": {"id": r.id, "text": r.text, "app": r.app, "rating": r.rating, "aspect": r.aspect,
-                     "sentiment": r.sentiment, "rule_hits": ", ".join(phrases)},
+            "data": {"id": r.id, "text": r.text, "meta": meta, "app": r.app, "rating": r.rating,
+                     "aspect": r.aspect, "sentiment": r.sentiment, "rule_hits": ", ".join(phrases)},
             "predictions": [{"model_version": "rules", "result": [
                 {"from_name": "urgency", "to_name": "text", "type": "choices", "value": {"choices": [label]}}]}],
         })

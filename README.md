@@ -96,8 +96,8 @@ Choices that matter:
   reviews are re-labelled by hand and the agreement is reported here: [ISI: agreement aspek/sentimen].
 - **Netral is 1.7% of the data.** Macro-F1 is reported so the model cannot score well by ignoring it, and
   per-class results are in `docs/results.md`.
-- **The urgency sample is enriched**: 40% rule-flagged, 35% negative, 25% other, because critical reviews
-  are rare. The share of critical reviews in the natural distribution is reported separately:
+- **The urgency sample is enriched**: 20% flagged *kritis* by the rules, 20% flagged *tinggi*, 35% other
+  negative reviews, 25% the rest, because critical reviews are rare. The share of critical reviews in the natural distribution is reported separately:
   [ISI: % kritis di sampel acak].
 
 Citation: Pratama, M. A. et al. (2026). *USH BRImo Dataset: Aspect-Based Sentiment Analysis of BRImo

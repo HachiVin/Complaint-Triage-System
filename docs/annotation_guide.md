@@ -48,8 +48,8 @@ Saran fitur, pujian, keluhan tampilan, lambat sesekali, biaya admin mahal, perta
 ## Alur kerja
 
 1. `python scripts/labelstudio.py sample data/interim/brimo.jsonl data/interim/ls_urgency.json --n 800`
-   Sampel sengaja diperkaya ulasan negatif dan ulasan yang ditandai aturan (40% / 35% / 25%), karena
-   ulasan kritis jarang. Distribusi asli dilaporkan terpisah di `docs/results.md`.
+   Sampel sengaja diperkaya: 20% ditandai aturan sebagai kritis, 20% sebagai tinggi, 35% ulasan negatif
+   lainnya, dan 25% sisanya acak, karena ulasan kritis jarang. Distribusi asli dilaporkan terpisah di `docs/results.md`.
 2. Buat proyek di Label Studio, tempel `docs/labelstudio_config.xml`, impor `ls_urgency.json`.
    Tebakan aturan sudah terpilih; tugas anotator memeriksa dan mengubah bila salah.
 3. Ekspor JSON, lalu

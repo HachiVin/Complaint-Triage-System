@@ -55,6 +55,7 @@ def test_labelstudio_sample_and_merge(tmp_path, records):
     assert run("scripts/labelstudio.py", "sample", data, tasks_file, "--n", "20").returncode == 0
     tasks = json.loads(tasks_file.read_text(encoding="utf-8"))
     assert len(tasks) == 20 and len({t["data"]["id"] for t in tasks}) == 20
+    assert all(t["data"]["meta"].startswith("Aplikasi:") for t in tasks)
     export = [{"data": t["data"], "annotations": [{"result": [
         {"from_name": "urgency", "to_name": "text", "type": "choices", "value": {"choices": ["tinggi"]}}]}]}
         for t in tasks[:5]]
