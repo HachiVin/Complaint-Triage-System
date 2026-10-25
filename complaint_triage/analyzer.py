@@ -82,10 +82,23 @@ class Analyzer:
         return self.analyze_batch([text])[0]
 
 
+def resolve_model_dir(model_dir: str | Path) -> Path:
+    """A local directory, or ``hf://owner/repo[@revision]`` for a model published on the Hugging Face Hub
+    (downloaded once into the Hub cache)."""
+    value = str(model_dir)
+    if not value.startswith("hf://"):
+        return Path(value)
+    from huggingface_hub import snapshot_download
+
+    repo, _, revision = value[len("hf://"):].partition("@")
+    return Path(snapshot_download(repo_id=repo, revision=revision or None))
+
+
 def load_model(model_dir: str | Path) -> Model:
     import json
 
-    meta = json.loads((Path(model_dir) / "model_meta.json").read_text(encoding="utf-8"))
+    model_dir = resolve_model_dir(model_dir)
+    meta = json.loads((model_dir / "model_meta.json").read_text(encoding="utf-8"))
     if meta.get("kind") == "multitask":
         from .multitask import MultiTaskModel
 

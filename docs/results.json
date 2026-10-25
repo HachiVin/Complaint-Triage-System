@@ -39,66 +39,66 @@
       },
       "models": {
         "TF-IDF + LogReg": {
-          "version": "baseline:v1",
+          "version": "baseline:demo-synthetic",
           "n": 7814,
           "tasks": {
             "aspect": {
               "n": 7814,
-              "accuracy": 0.6921,
-              "macro_f1": 0.5908,
+              "accuracy": 0.3704,
+              "macro_f1": 0.238,
               "per_label": {
                 "kualitas_transaksi": {
-                  "precision": 0.6749,
-                  "recall": 0.71,
-                  "f1": 0.692,
+                  "precision": 0.3525,
+                  "recall": 0.2033,
+                  "f1": 0.2579,
                   "support": 1269
                 },
                 "kualitas_sistem": {
-                  "precision": 0.8118,
-                  "recall": 0.8251,
-                  "f1": 0.8184,
+                  "precision": 0.6761,
+                  "recall": 0.429,
+                  "f1": 0.525,
                   "support": 2881
                 },
                 "keamanan_privasi": {
-                  "precision": 0.4796,
-                  "recall": 0.5281,
-                  "f1": 0.5027,
+                  "precision": 0.0447,
+                  "recall": 0.1423,
+                  "f1": 0.068,
                   "support": 267
                 },
                 "kemudahan_penggunaan": {
-                  "precision": 0.6238,
-                  "recall": 0.5696,
-                  "f1": 0.5955,
+                  "precision": 0.3541,
+                  "recall": 0.3747,
+                  "f1": 0.3641,
                   "support": 1185
                 },
                 "fitur_inovasi": {
-                  "precision": 0.5436,
-                  "recall": 0.4796,
-                  "f1": 0.5096,
+                  "precision": 0.4286,
+                  "recall": 0.1086,
+                  "f1": 0.1733,
                   "support": 221
                 },
                 "biaya_risiko": {
-                  "precision": 0.5404,
-                  "recall": 0.6814,
-                  "f1": 0.6027,
+                  "precision": 0.201,
+                  "recall": 0.1814,
+                  "f1": 0.1907,
                   "support": 226
                 },
                 "layanan_pelanggan": {
-                  "precision": 0.5429,
-                  "recall": 0.6183,
-                  "f1": 0.5781,
+                  "precision": 0.5333,
+                  "recall": 0.0237,
+                  "f1": 0.0453,
                   "support": 338
                 },
                 "kualitas_informasi": {
-                  "precision": 0.3542,
-                  "recall": 0.4198,
-                  "f1": 0.3842,
+                  "precision": 0.0876,
+                  "recall": 0.1481,
+                  "f1": 0.1101,
                   "support": 81
                 },
                 "umum": {
-                  "precision": 0.668,
-                  "recall": 0.6025,
-                  "f1": 0.6336,
+                  "precision": 0.3042,
+                  "recall": 0.6189,
+                  "f1": 0.4079,
                   "support": 1346
                 }
               },
@@ -116,128 +116,128 @@
                 ],
                 "matrix": [
                   [
-                    901,
-                    109,
-                    21,
-                    81,
-                    14,
-                    42,
-                    21,
-                    7,
-                    73
-                  ],
-                  [
-                    115,
-                    2377,
-                    56,
-                    104,
-                    17,
-                    20,
-                    60,
-                    17,
-                    115
-                  ],
-                  [
-                    9,
-                    54,
-                    141,
+                    258,
+                    116,
+                    129,
+                    271,
+                    0,
                     29,
-                    5,
-                    4,
-                    12,
-                    3,
-                    10
-                  ],
-                  [
-                    139,
-                    165,
-                    30,
-                    675,
-                    14,
-                    11,
-                    24,
-                    7,
-                    120
-                  ],
-                  [
+                    0,
                     23,
-                    22,
+                    443
+                  ],
+                  [
+                    208,
+                    1236,
+                    445,
+                    164,
                     2,
-                    21,
-                    106,
-                    6,
-                    10,
-                    7,
-                    24
-                  ],
-                  [
-                    13,
-                    12,
-                    9,
-                    11,
+                    75,
                     5,
-                    154,
-                    5,
-                    1,
-                    16
+                    62,
+                    684
                   ],
                   [
-                    17,
-                    34,
-                    4,
-                    16,
-                    4,
-                    6,
-                    209,
-                    8,
-                    40
-                  ],
-                  [
-                    7,
-                    14,
-                    1,
-                    7,
-                    7,
-                    4,
-                    2,
-                    34,
-                    5
-                  ],
-                  [
-                    111,
-                    141,
-                    30,
-                    138,
-                    23,
+                    28,
+                    54,
                     38,
-                    42,
+                    45,
+                    5,
+                    5,
+                    0,
+                    2,
+                    90
+                  ],
+                  [
+                    40,
+                    150,
+                    91,
+                    444,
+                    2,
+                    11,
+                    0,
+                    14,
+                    433
+                  ],
+                  [
+                    20,
+                    46,
+                    7,
+                    46,
+                    24,
+                    8,
+                    1,
+                    2,
+                    67
+                  ],
+                  [
+                    48,
+                    30,
+                    21,
+                    28,
+                    4,
+                    41,
+                    0,
+                    3,
+                    51
+                  ],
+                  [
+                    34,
+                    44,
+                    52,
+                    58,
+                    1,
+                    11,
+                    8,
+                    6,
+                    124
+                  ],
+                  [
                     12,
-                    811
+                    20,
+                    9,
+                    10,
+                    0,
+                    5,
+                    0,
+                    12,
+                    13
+                  ],
+                  [
+                    84,
+                    132,
+                    58,
+                    188,
+                    18,
+                    19,
+                    1,
+                    13,
+                    833
                   ]
                 ]
               }
             },
             "sentiment": {
               "n": 7814,
-              "accuracy": 0.8921,
-              "macro_f1": 0.6518,
+              "accuracy": 0.7535,
+              "macro_f1": 0.5107,
               "per_label": {
                 "negatif": {
-                  "precision": 0.8855,
-                  "recall": 0.9343,
-                  "f1": 0.9093,
+                  "precision": 0.6926,
+                  "recall": 0.9536,
+                  "f1": 0.8024,
                   "support": 3990
                 },
                 "netral": {
-                  "precision": 0.1575,
-                  "recall": 0.1342,
-                  "f1": 0.1449,
+                  "precision": 0.05,
+                  "recall": 0.0201,
+                  "f1": 0.0287,
                   "support": 149
                 },
                 "positif": {
-                  "precision": 0.9269,
-                  "recall": 0.877,
-                  "f1": 0.9013,
+                  "precision": 0.9204,
+                  "recall": 0.566,
+                  "f1": 0.7009,
                   "support": 3675
                 }
               },
@@ -249,44 +249,44 @@
                 ],
                 "matrix": [
                   [
-                    3728,
-                    54,
-                    208
+                    3805,
+                    25,
+                    160
                   ],
                   [
-                    83,
-                    20,
-                    46
+                    126,
+                    3,
+                    20
                   ],
                   [
-                    399,
-                    53,
-                    3223
+                    1563,
+                    32,
+                    2080
                   ]
                 ]
               }
             },
             "urgency": {
               "n": 122,
-              "accuracy": 0.7787,
-              "macro_f1": 0.8048,
+              "accuracy": 0.5902,
+              "macro_f1": 0.5549,
               "per_label": {
                 "kritis": {
-                  "precision": 0.7857,
-                  "recall": 1.0,
-                  "f1": 0.88,
+                  "precision": 1.0,
+                  "recall": 0.3636,
+                  "f1": 0.5333,
                   "support": 11
                 },
                 "tinggi": {
-                  "precision": 0.8696,
-                  "recall": 0.6897,
-                  "f1": 0.7692,
+                  "precision": 0.8261,
+                  "recall": 0.3276,
+                  "f1": 0.4691,
                   "support": 58
                 },
                 "normal": {
-                  "precision": 0.7097,
-                  "recall": 0.8302,
-                  "f1": 0.7652,
+                  "precision": 0.5158,
+                  "recall": 0.9245,
+                  "f1": 0.6622,
                   "support": 53
                 }
               },
@@ -298,33 +298,33 @@
                 ],
                 "matrix": [
                   [
-                    11,
+                    4,
                     0,
-                    0
+                    7
                   ],
                   [
                     0,
-                    40,
-                    18
+                    19,
+                    39
                   ],
                   [
-                    3,
-                    6,
-                    44
+                    0,
+                    4,
+                    49
                   ]
                 ]
               },
-              "kritis_recall": 1.0,
-              "kritis_precision": 0.7857
+              "kritis_recall": 0.3636,
+              "kritis_precision": 1.0
             }
           },
-          "needs_review_rate": 0.3924,
-          "throughput_per_s": 2103.4,
+          "needs_review_rate": 0.742,
+          "throughput_per_s": 2383.6,
           "latency_ms_single": {
-            "p50": 6.94,
-            "p95": 7.91
+            "p50": 6.6,
+            "p95": 8.39
           },
-          "size_mb": 33.7
+          "size_mb": 0.4
         },
         "IndoBERT multi-task": {
           "version": "multitask:indobert-mt",
@@ -607,10 +607,10 @@
             }
           },
           "needs_review_rate": 0.2132,
-          "throughput_per_s": 7.1,
+          "throughput_per_s": 7.4,
           "latency_ms_single": {
-            "p50": 111.06,
-            "p95": 171.73
+            "p50": 106.48,
+            "p95": 148.81
           },
           "size_mb": 498.6
         }

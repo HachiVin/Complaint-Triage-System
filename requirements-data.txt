@@ -2,4 +2,6 @@
 pandas==3.1.0
 openpyxl==3.1.5
 google-play-scraper==1.2.7
+# Publishing the IndoBERT model to the Hugging Face Hub (scripts/push_model.py)
+huggingface_hub==2.3.0
 # Label Studio is heavy; install it in its own environment:  pip install label-studio==1.23.2

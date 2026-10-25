@@ -23,8 +23,11 @@ class Database:
     def __init__(self, dsn: str, agent_dsn: str | None = None, min_size: int = 1, max_size: int = 5):
         from psycopg_pool import ConnectionPool
 
-        self.pool = ConnectionPool(dsn, min_size=min_size, max_size=max_size, open=True)
-        self.agent_pool = ConnectionPool(agent_dsn, min_size=1, max_size=2, open=True) if agent_dsn else self.pool
+        # check_connection: serverless Postgres (Neon, Supabase) closes idle connections; test before use.
+        check = ConnectionPool.check_connection
+        self.pool = ConnectionPool(dsn, min_size=min_size, max_size=max_size, open=True, check=check)
+        self.agent_pool = (ConnectionPool(agent_dsn, min_size=1, max_size=2, open=True, check=check)
+                           if agent_dsn else self.pool)
 
     def close(self) -> None:
         if self.agent_pool is not self.pool:
@@ -47,33 +50,40 @@ class Database:
 
     def upsert_reviews(self, reviews: list[Review], labelled_by: str = "dataset") -> list[int]:
         """Insert reviews (ignoring ones already present) and their labels. Returns database ids in order."""
+        if not reviews:
+            return []
         ids = []
         with self.pool.connection() as conn, conn.cursor() as cur:
-            for r in reviews:
-                cur.execute(
+            # executemany(returning=True) pipelines the batch: one network round trip instead of one per row.
+            cur.executemany(
+                """
+                INSERT INTO reviews (source, external_id, app, text, rating, review_date, app_version)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (source, external_id) DO UPDATE SET text = EXCLUDED.text
+                RETURNING id
+                """,
+                [(r.source, external_id(r), r.app, r.text, r.rating, r.date, r.app_version) for r in reviews],
+                returning=True,
+            )
+            while True:
+                ids.append(cur.fetchone()[0])
+                if not cur.nextset():
+                    break
+            labelled = [(rid, r.aspect, r.sentiment, r.urgency, labelled_by)
+                        for rid, r in zip(ids, reviews, strict=True) if r.aspect or r.sentiment or r.urgency]
+            if labelled:
+                cur.executemany(
                     """
-                    INSERT INTO reviews (source, external_id, app, text, rating, review_date, app_version)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (source, external_id) DO UPDATE SET text = EXCLUDED.text
-                    RETURNING id
+                    INSERT INTO labels (review_id, aspect, sentiment, urgency, labelled_by)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (review_id) DO UPDATE SET
+                        aspect = COALESCE(EXCLUDED.aspect, labels.aspect),
+                        sentiment = COALESCE(EXCLUDED.sentiment, labels.sentiment),
+                        urgency = COALESCE(EXCLUDED.urgency, labels.urgency),
+                        labelled_by = EXCLUDED.labelled_by, updated_at = now()
                     """,
-                    (r.source, external_id(r), r.app, r.text, r.rating, r.date, r.app_version),
+                    labelled,
                 )
-                rid = cur.fetchone()[0]
-                ids.append(rid)
-                if r.aspect or r.sentiment or r.urgency:
-                    cur.execute(
-                        """
-                        INSERT INTO labels (review_id, aspect, sentiment, urgency, labelled_by)
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (review_id) DO UPDATE SET
-                            aspect = COALESCE(EXCLUDED.aspect, labels.aspect),
-                            sentiment = COALESCE(EXCLUDED.sentiment, labels.sentiment),
-                            urgency = COALESCE(EXCLUDED.urgency, labels.urgency),
-                            labelled_by = EXCLUDED.labelled_by, updated_at = now()
-                        """,
-                        (rid, r.aspect, r.sentiment, r.urgency, labelled_by),
-                    )
         return ids
 
     def save_predictions(self, review_ids: list[int], results: list[Analysis]) -> None:
@@ -163,12 +173,16 @@ class Database:
                        count(*) FILTER (WHERE urgency = 'kritis') AS kritis
                 FROM v_reviews WHERE {where} GROUP BY aspect ORDER BY n DESC
                 """, params).fetchall()
+            # Whole weeks only at the start, so the first point of the chart is not a partial week.
             weekly = conn.execute(
-                f"""
+                """
                 SELECT date_trunc('week', review_date)::date AS week, aspect, count(*)
-                FROM v_reviews WHERE {where} AND sentiment = 'negatif'
+                FROM v_reviews
+                WHERE (%(app)s::text IS NULL OR app = %(app)s) AND sentiment = 'negatif'
+                  AND review_date >= date_trunc('week', %(end)s::date)::date - (%(weeks)s - 1) * 7
+                  AND review_date <= %(end)s::date
                 GROUP BY 1, 2 ORDER BY 1, 2
-                """, params).fetchall()
+                """, {**params, "weeks": weeks}).fetchall()
             versions = conn.execute(
                 f"""
                 SELECT app_version, count(*), avg((sentiment = 'negatif')::int),

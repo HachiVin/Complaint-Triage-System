@@ -2,6 +2,7 @@ const $ = (id) => document.getElementById(id);
 let LABELS = { aspect: [], sentiment: [], urgency: [] };
 let trendChart = null;
 let currentUrgency = "kritis";
+let canCorrect = true;
 
 const nameOf = (task, key) => (LABELS[task].find((l) => l.key === key) || { name: key }).name;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -31,8 +32,11 @@ function renderAspects(aspects) {
     || `<li class="muted">Belum ada keluhan pada periode ini.</li>`;
 }
 
-function renderTrend(weekly) {
+function renderTrend(weekly, periodEnd) {
   const weeks = [...new Set(weekly.map((w) => w.week))].sort();
+  // The newest week is usually cut off by the last review date: mark it so a drop is not misread.
+  const lastWeek = weeks[weeks.length - 1];
+  const partial = lastWeek && (new Date(periodEnd) - new Date(lastWeek)) / 86400000 < 6;
   const totals = {};
   weekly.forEach((w) => (totals[w.aspect] = (totals[w.aspect] || 0) + w.reviews));
   const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k]) => k);
@@ -45,7 +49,7 @@ function renderTrend(weekly) {
   const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
   const cfg = {
     type: "line",
-    data: { labels: weeks.map((w) => w.slice(5)), datasets },
+    data: { labels: weeks.map((w) => w.slice(5) + (partial && w === lastWeek ? "*" : "")), datasets },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
       plugins: { legend: { position: "bottom", labels: { boxWidth: 10, color: muted } } },
       scales: { y: { beginAtZero: true, ticks: { precision: 0, color: muted } }, x: { ticks: { color: muted } } } },
@@ -68,7 +72,8 @@ async function loadOverview() {
   $("k-rating").textContent = o.avg_rating ?? "–";
   $("k-review").textContent = pct(o.needs_review_share);
   renderAspects(o.aspects);
-  renderTrend(o.weekly_negative);
+  renderTrend(o.weekly_negative, o.period_end);
+  $("trend-note").textContent = "Ulasan negatif per minggu untuk empat aspek terbanyak. * = minggu terakhir belum penuh.";
 }
 
 async function loadQueue() {
@@ -82,7 +87,9 @@ async function loadQueue() {
       <td>${r.rating ?? "–"}</td>
       <td class="text">${esc(r.text)} ${r.needs_review ? '<span class="flag">· perlu dicek</span>' : ""}</td>
       <td class="nowrap">${esc(r.app_version || "–")}</td>
-      <td><select data-review="${r.review_id}" aria-label="Ubah urgensi">${options(r.urgency)}</select></td>
+      <td>${canCorrect
+        ? `<select data-review="${r.review_id}" aria-label="Ubah urgensi">${options(r.urgency)}</select>`
+        : `<span class="badge ${r.urgency}">${esc(nameOf("urgency", r.urgency))}</span>`}</td>
     </tr>`).join("") || `<tr><td colspan="6" class="muted">Tidak ada ulasan dengan urgensi ini.</td></tr>`;
 }
 
@@ -151,6 +158,8 @@ async function init() {
     LABELS = await getJSON("/api/labels");
     const h = await getJSON("/health");
     $("model").textContent = h.model_version;
+    canCorrect = h.corrections !== false;
+    if (!canCorrect) $("queue-note").textContent = "Ulasan terbaru dengan urgensi terpilih, diurutkan dari yang terbaru. Koreksi label dimatikan di demo publik.";
     const notes = [];
     if (h.demo_model) notes.push("Model demo dilatih dengan ulasan fiktif.");
     if (h.database === "not_configured") notes.push("Database belum dikonfigurasi: hanya klasifikasi yang aktif.");

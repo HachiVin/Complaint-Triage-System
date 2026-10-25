@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from complaint_triage.analyzer import Analyzer
@@ -86,6 +88,20 @@ def test_evaluate_model_report_shape(baseline, records):
     assert set(report["tasks"]) == {"aspect", "sentiment", "urgency"}
     assert "kritis_recall" in report["tasks"]["urgency"]
     assert report["latency_ms_single"]["p50"] >= 0
+
+
+def test_resolve_model_dir(monkeypatch, tmp_path):
+    import huggingface_hub
+
+    from complaint_triage.analyzer import resolve_model_dir
+
+    assert resolve_model_dir("models/baseline") == Path("models/baseline")
+    calls = []
+    monkeypatch.setattr(huggingface_hub, "snapshot_download",
+                        lambda repo_id, revision=None: calls.append((repo_id, revision)) or str(tmp_path))
+    assert resolve_model_dir("hf://someone/model@v1") == tmp_path
+    assert resolve_model_dir("hf://someone/model") == tmp_path
+    assert calls == [("someone/model", "v1"), ("someone/model", None)]
 
 
 def test_evaluate_rules(records):

@@ -38,6 +38,14 @@ def test_labels_and_index(client):
     assert "Complaint Triage System" in client.get("/").text
 
 
+def test_corrections_can_be_switched_off(baseline, monkeypatch):
+    monkeypatch.setenv("ALLOW_CORRECTIONS", "0")
+    with TestClient(create_app(analyzer=Analyzer(baseline))) as c:
+        assert c.get("/health").json()["corrections"] is False
+        r = c.post("/api/correct", json={"review_id": 1, "task": "urgency", "label": "normal"})
+        assert r.status_code == 403
+
+
 def test_rate_limit(baseline, monkeypatch):
     monkeypatch.setenv("RATE_LIMIT_CLASSIFY", "2")
     with TestClient(create_app(analyzer=Analyzer(baseline))) as c:
@@ -96,6 +104,14 @@ def test_ask(db_client):
     r = db_client.post("/api/ask", json={"question": "berapa total ulasan?"}).json()
     assert r["ok"] and r["queries"] == ["SELECT count(*) AS n FROM v_reviews"]
     assert db_client.get("/metrics").json()["agent"]["runs"] == 1
+
+
+def test_upsert_returns_ids_in_input_order(loaded_db, records):
+    ids = loaded_db.upsert_reviews(records[:30])
+    with loaded_db.pool.connection() as conn:
+        texts = dict(conn.execute("SELECT id, text FROM reviews WHERE id = ANY(%s)", (ids,)).fetchall())
+    assert [texts[i] for i in ids] == [r.text for r in records[:30]]
+    assert len(set(ids)) == len({(r.source, r.id) for r in records[:30]})
 
 
 def test_readonly_path_blocks_writes(loaded_db):

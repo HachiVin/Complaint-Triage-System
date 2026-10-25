@@ -237,7 +237,20 @@ ruff check . && pytest
 
 ## Deployment
 
-Cloud Run (Jakarta region), with PostgreSQL on Cloud SQL or a free Neon/Supabase instance:
+**Live demo: Hugging Face Spaces (Docker) + Neon PostgreSQL**, both on free tiers.
+
+1. Publish the IndoBERT model to the Hub: `python scripts/push_model.py models/indobert-mt <user>/complaint-triage-indobert`.
+2. Load the reviews and IndoBERT predictions into Neon from a free Colab GPU
+   (`notebooks/ingest_colab.ipynb`, a few minutes; on CPU it would take about 2 hours).
+3. Create a Docker Space with the two files in `deploy/hf-space/`. Its Dockerfile builds this repository
+   from GitHub. Set `MODEL_DIR=hf://<user>/complaint-triage-indobert` and `ALLOW_CORRECTIONS=0` as
+   variables and `DATABASE_URL` (and optionally `LLM_API_KEY`) as secrets.
+
+The free Space has 2 vCPU and 16 GB RAM, enough to serve IndoBERT at about 111 ms per review. It sleeps
+after two days without visitors and takes about a minute to wake up. Label corrections are switched off
+in the public demo so visitors cannot change the stored labels.
+
+**Google Cloud Run** (Jakarta region), with PostgreSQL on Cloud SQL or Neon:
 
 ```bash
 gcloud run deploy complaint-triage --source . --region asia-southeast2 --allow-unauthenticated \
@@ -286,9 +299,11 @@ way, a large backlog is scored in batch (`scripts/ingest.py`) rather than throug
 complaint_triage/   labels, data, rules, baseline, multitask (PyTorch), analyzer, evaluation,
                 sqlguard, db (PostgreSQL), agent (LangGraph)
 app/            FastAPI app, monitoring, static dashboard (HTML/JS/CSS)
-scripts/        inspect, import, scrape, Label Studio, prepare, train, evaluate, ingest, agent eval, demo
+scripts/        inspect, import, scrape, Label Studio, prepare, train, evaluate, ingest, push model,
+                agent eval, demo
 sql/            schema and the read-only agent role
-notebooks/      Colab training notebook
+notebooks/      Colab notebooks: training, and scoring the demo database on a GPU
+deploy/hf-space/  Dockerfile and card for the Hugging Face Space
 docs/           annotation guide, Label Studio config, results
 tests/          unit tests, PostgreSQL and API tests, agent tests with a scripted LLM
 ```

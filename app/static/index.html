@@ -44,7 +44,7 @@
     </div>
     <div class="card">
       <h2>Tren keluhan mingguan</h2>
-      <p class="muted small">Ulasan negatif per minggu untuk empat aspek terbanyak.</p>
+      <p class="muted small" id="trend-note">Ulasan negatif per minggu untuk empat aspek terbanyak.</p>
       <div class="chart"><canvas id="trend" aria-label="Grafik tren keluhan mingguan" role="img"></canvas></div>
     </div>
   </section>
@@ -57,8 +57,8 @@
         <button type="button" class="tab" data-urgency="tinggi">Tinggi</button>
       </div>
     </div>
-    <p class="muted small">Ulasan terbaru dengan urgensi terpilih. Ubah label bila model salah; koreksi tersimpan
-      sebagai data latih berikutnya.</p>
+    <p class="muted small" id="queue-note">Ulasan terbaru dengan urgensi terpilih. Ubah label bila model salah;
+      koreksi tersimpan sebagai data latih berikutnya.</p>
     <div class="table-wrap">
       <table id="queue">
         <thead><tr><th>Tanggal</th><th>Aspek</th><th>Rating</th><th>Ulasan</th><th>Versi</th><th>Urgensi</th></tr></thead>

@@ -266,7 +266,9 @@ class MultiTaskModel:
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir / "encoder")
         self.module = build_module(str(model_dir / "encoder"), self.tasks)
         self.module.heads.load_state_dict(torch.load(model_dir / "heads.pt", map_location="cpu"))
-        self.module.eval()
+        # GPU when there is one (batch scoring in Colab); CPU otherwise (the API).
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.module.to(self.device).eval()
         self.max_length = max_length
         self.version = f"multitask:{meta.get('version', model_dir.name)}"
 
@@ -277,8 +279,8 @@ class MultiTaskModel:
             for i in range(0, len(texts), batch_size):
                 enc = self.tokenizer(texts[i: i + batch_size], truncation=True, max_length=self.max_length,
                                      padding=True, return_tensors="pt")
-                logits = self.module(enc["input_ids"], enc["attention_mask"])
+                logits = self.module(enc["input_ids"].to(self.device), enc["attention_mask"].to(self.device))
                 for t in self.tasks:
-                    out[t].append(torch.softmax(logits[t], -1).numpy())
+                    out[t].append(torch.softmax(logits[t].float(), -1).cpu().numpy())
         return {t: (np.concatenate(v) if v else np.zeros((0, len(TASKS[t])))).astype(np.float32)
                 for t, v in out.items()}

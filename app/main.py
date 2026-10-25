@@ -1,13 +1,15 @@
 """Complaint Triage System API and dashboard.
 
 Environment:
-    MODEL_DIR            model directory (baseline or multitask), default models/baseline
+    MODEL_DIR            model directory (baseline or multitask), default models/baseline;
+                         hf://owner/repo loads a model published on the Hugging Face Hub
     DATABASE_URL         PostgreSQL; without it only /api/classify works
     AGENT_DATABASE_URL   optional read-only DSN for the agent (role agent_ro, sql/readonly_role.sql)
     LLM_API_KEY          enables /api/ask (LLM_BASE_URL and LLM_MODEL optional, default Groq gpt-oss-20b)
     SEED_DEMO            1 = load the fictional demo reviews when the database is empty
     RATE_LIMIT_CLASSIFY  requests per client per minute, default 60
     RATE_LIMIT_ASK       agent questions per client per minute, default 5
+    ALLOW_CORRECTIONS    0 = public demo: label corrections are refused (default 1)
 """
 
 from __future__ import annotations
@@ -139,6 +141,8 @@ def create_app(analyzer: Analyzer | None = None, db=None, agent=None) -> FastAPI
 
     @app.post("/api/correct", status_code=204)
     def correct(req: CorrectRequest):
+        if os.getenv("ALLOW_CORRECTIONS", "1") == "0":
+            raise HTTPException(403, "Mode demo publik: koreksi label dimatikan.")
         if req.label not in TASKS[req.task]:
             raise HTTPException(422, f"label must be one of {list(TASKS[req.task])}")
         try:
@@ -173,7 +177,8 @@ def create_app(analyzer: Analyzer | None = None, db=None, agent=None) -> FastAPI
         db_state = "not_configured" if app.state.db is None else app.state.db.ping()
         version = app.state.analyzer.version
         return {"status": "ok" if db_state is not False else "degraded", "model_version": version,
-                "demo_model": "demo" in version, "database": db_state, "agent": app.state.agent is not None}
+                "demo_model": "demo" in version, "database": db_state, "agent": app.state.agent is not None,
+                "corrections": os.getenv("ALLOW_CORRECTIONS", "1") != "0"}
 
     @app.get("/metrics")
     def metrics():
