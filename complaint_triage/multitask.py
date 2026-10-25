@@ -40,6 +40,8 @@ class TrainConfig:
     seed: int = 42
     task_weights: dict[str, float] = field(default_factory=lambda: {"aspect": 1.0, "sentiment": 1.0, "urgency": 2.0})
     max_train_rows: int | None = None  # subsample for quick experiments
+    fp16: bool = True  # mixed precision on CUDA (about twice as fast on a Colab T4); ignored on CPU/MPS
+    log_every: int = 200  # steps between progress lines
 
 
 def _torch():
@@ -168,11 +170,17 @@ def train_multitask(train: list[Review], val: list[Review], out_dir: str | Path,
     total = max(1, len(train_dl) * cfg.epochs)
     scheduler = get_linear_schedule_with_warmup(optimizer, int(cfg.warmup_ratio * total), total)
 
+    use_amp = cfg.fp16 and device.type == "cuda"
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+
+    def autocast():
+        return torch.autocast(device_type="cuda", dtype=torch.float16, enabled=use_amp)
+
     def evaluate() -> dict:
         model.eval()
         preds = {t: [] for t in tasks}
         truth = {t: [] for t in tasks}
-        with torch.inference_mode():
+        with torch.inference_mode(), autocast():
             for ids, mask, labels in val_dl:
                 logits = model(ids.to(device), mask.to(device))
                 for t in tasks:
@@ -187,24 +195,34 @@ def train_multitask(train: list[Review], val: list[Review], out_dir: str | Path,
             vals.append(metrics["urgency"]["kritis_recall"])
         return float(np.mean(vals)) if vals else 0.0
 
+    log(f"training on {device} ({'fp16' if use_amp else 'fp32'}): {len(train_ds):,} rows, "
+        f"{len(train_dl):,} steps per epoch, tasks {tasks}")
     best, best_epoch, bad, history = -1.0, 0, 0, []
     for epoch in range(1, cfg.epochs + 1):
         model.train()
         started, running = time.time(), 0.0
-        for ids, mask, labels in train_dl:
-            logits = model(ids.to(device), mask.to(device))
-            loss = 0.0
-            for t in tasks:
-                y = labels[t].to(device)
-                if (y != IGNORE).any():
-                    loss = loss + cfg.task_weights.get(t, 1.0) * loss_fns[t](logits[t], y)
+        for step, (ids, mask, labels) in enumerate(train_dl, 1):
+            with autocast():
+                logits = model(ids.to(device), mask.to(device))
+                loss = 0.0
+                for t in tasks:
+                    y = labels[t].to(device)
+                    if (y != IGNORE).any():
+                        loss = loss + cfg.task_weights.get(t, 1.0) * loss_fns[t](logits[t].float(), y)
             if not isinstance(loss, float):
-                loss.backward()
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                optimizer.step()
+                scaler.step(optimizer)
+                scaler.update()
                 scheduler.step()
                 running += loss.item()
             optimizer.zero_grad()
+            if cfg.log_every and step % cfg.log_every == 0:
+                elapsed = time.time() - started
+                eta = elapsed / step * (len(train_dl) - step)
+                log(f"epoch {epoch} step {step}/{len(train_dl)} loss {running / step:.4f} "
+                    f"({elapsed / 60:.1f} min, about {eta / 60:.1f} min left in this epoch)")
         metrics = evaluate()
         s = score(metrics)
         row = {"epoch": epoch, "train_loss": round(running / max(1, len(train_dl)), 4), "val": metrics,
