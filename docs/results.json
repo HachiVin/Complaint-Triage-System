@@ -1,0 +1,672 @@
+{
+  "date": "2026-10-25",
+  "sets": {
+    "test": {
+      "data": {
+        "reviews": 7814,
+        "apps": {
+          "BRImo": 7814
+        },
+        "date_range": [
+          "2026-04-23",
+          "2026-06-19"
+        ],
+        "aspect_labelled": 7814,
+        "sentiment_labelled": 7814,
+        "urgency_labelled": 122,
+        "aspect": {
+          "biaya_risiko": 226,
+          "fitur_inovasi": 221,
+          "keamanan_privasi": 267,
+          "kemudahan_penggunaan": 1185,
+          "kualitas_informasi": 81,
+          "kualitas_sistem": 2881,
+          "kualitas_transaksi": 1269,
+          "layanan_pelanggan": 338,
+          "umum": 1346
+        },
+        "sentiment": {
+          "negatif": 3990,
+          "netral": 149,
+          "positif": 3675
+        },
+        "urgency": {
+          "kritis": 11,
+          "normal": 53,
+          "tinggi": 58
+        },
+        "synthetic": 0
+      },
+      "models": {
+        "TF-IDF + LogReg": {
+          "version": "baseline:v1",
+          "n": 7814,
+          "tasks": {
+            "aspect": {
+              "n": 7814,
+              "accuracy": 0.6921,
+              "macro_f1": 0.5908,
+              "per_label": {
+                "kualitas_transaksi": {
+                  "precision": 0.6749,
+                  "recall": 0.71,
+                  "f1": 0.692,
+                  "support": 1269
+                },
+                "kualitas_sistem": {
+                  "precision": 0.8118,
+                  "recall": 0.8251,
+                  "f1": 0.8184,
+                  "support": 2881
+                },
+                "keamanan_privasi": {
+                  "precision": 0.4796,
+                  "recall": 0.5281,
+                  "f1": 0.5027,
+                  "support": 267
+                },
+                "kemudahan_penggunaan": {
+                  "precision": 0.6238,
+                  "recall": 0.5696,
+                  "f1": 0.5955,
+                  "support": 1185
+                },
+                "fitur_inovasi": {
+                  "precision": 0.5436,
+                  "recall": 0.4796,
+                  "f1": 0.5096,
+                  "support": 221
+                },
+                "biaya_risiko": {
+                  "precision": 0.5404,
+                  "recall": 0.6814,
+                  "f1": 0.6027,
+                  "support": 226
+                },
+                "layanan_pelanggan": {
+                  "precision": 0.5429,
+                  "recall": 0.6183,
+                  "f1": 0.5781,
+                  "support": 338
+                },
+                "kualitas_informasi": {
+                  "precision": 0.3542,
+                  "recall": 0.4198,
+                  "f1": 0.3842,
+                  "support": 81
+                },
+                "umum": {
+                  "precision": 0.668,
+                  "recall": 0.6025,
+                  "f1": 0.6336,
+                  "support": 1346
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "kualitas_transaksi",
+                  "kualitas_sistem",
+                  "keamanan_privasi",
+                  "kemudahan_penggunaan",
+                  "fitur_inovasi",
+                  "biaya_risiko",
+                  "layanan_pelanggan",
+                  "kualitas_informasi",
+                  "umum"
+                ],
+                "matrix": [
+                  [
+                    901,
+                    109,
+                    21,
+                    81,
+                    14,
+                    42,
+                    21,
+                    7,
+                    73
+                  ],
+                  [
+                    115,
+                    2377,
+                    56,
+                    104,
+                    17,
+                    20,
+                    60,
+                    17,
+                    115
+                  ],
+                  [
+                    9,
+                    54,
+                    141,
+                    29,
+                    5,
+                    4,
+                    12,
+                    3,
+                    10
+                  ],
+                  [
+                    139,
+                    165,
+                    30,
+                    675,
+                    14,
+                    11,
+                    24,
+                    7,
+                    120
+                  ],
+                  [
+                    23,
+                    22,
+                    2,
+                    21,
+                    106,
+                    6,
+                    10,
+                    7,
+                    24
+                  ],
+                  [
+                    13,
+                    12,
+                    9,
+                    11,
+                    5,
+                    154,
+                    5,
+                    1,
+                    16
+                  ],
+                  [
+                    17,
+                    34,
+                    4,
+                    16,
+                    4,
+                    6,
+                    209,
+                    8,
+                    40
+                  ],
+                  [
+                    7,
+                    14,
+                    1,
+                    7,
+                    7,
+                    4,
+                    2,
+                    34,
+                    5
+                  ],
+                  [
+                    111,
+                    141,
+                    30,
+                    138,
+                    23,
+                    38,
+                    42,
+                    12,
+                    811
+                  ]
+                ]
+              }
+            },
+            "sentiment": {
+              "n": 7814,
+              "accuracy": 0.8921,
+              "macro_f1": 0.6518,
+              "per_label": {
+                "negatif": {
+                  "precision": 0.8855,
+                  "recall": 0.9343,
+                  "f1": 0.9093,
+                  "support": 3990
+                },
+                "netral": {
+                  "precision": 0.1575,
+                  "recall": 0.1342,
+                  "f1": 0.1449,
+                  "support": 149
+                },
+                "positif": {
+                  "precision": 0.9269,
+                  "recall": 0.877,
+                  "f1": 0.9013,
+                  "support": 3675
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "negatif",
+                  "netral",
+                  "positif"
+                ],
+                "matrix": [
+                  [
+                    3728,
+                    54,
+                    208
+                  ],
+                  [
+                    83,
+                    20,
+                    46
+                  ],
+                  [
+                    399,
+                    53,
+                    3223
+                  ]
+                ]
+              }
+            },
+            "urgency": {
+              "n": 122,
+              "accuracy": 0.7787,
+              "macro_f1": 0.8048,
+              "per_label": {
+                "kritis": {
+                  "precision": 0.7857,
+                  "recall": 1.0,
+                  "f1": 0.88,
+                  "support": 11
+                },
+                "tinggi": {
+                  "precision": 0.8696,
+                  "recall": 0.6897,
+                  "f1": 0.7692,
+                  "support": 58
+                },
+                "normal": {
+                  "precision": 0.7097,
+                  "recall": 0.8302,
+                  "f1": 0.7652,
+                  "support": 53
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "kritis",
+                  "tinggi",
+                  "normal"
+                ],
+                "matrix": [
+                  [
+                    11,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    40,
+                    18
+                  ],
+                  [
+                    3,
+                    6,
+                    44
+                  ]
+                ]
+              },
+              "kritis_recall": 1.0,
+              "kritis_precision": 0.7857
+            }
+          },
+          "needs_review_rate": 0.3924,
+          "throughput_per_s": 2103.4,
+          "latency_ms_single": {
+            "p50": 6.94,
+            "p95": 7.91
+          },
+          "size_mb": 33.7
+        },
+        "IndoBERT multi-task": {
+          "version": "multitask:indobert-mt",
+          "n": 7814,
+          "tasks": {
+            "aspect": {
+              "n": 7814,
+              "accuracy": 0.7063,
+              "macro_f1": 0.612,
+              "per_label": {
+                "kualitas_transaksi": {
+                  "precision": 0.6799,
+                  "recall": 0.7699,
+                  "f1": 0.7221,
+                  "support": 1269
+                },
+                "kualitas_sistem": {
+                  "precision": 0.8412,
+                  "recall": 0.7997,
+                  "f1": 0.8199,
+                  "support": 2881
+                },
+                "keamanan_privasi": {
+                  "precision": 0.4386,
+                  "recall": 0.6554,
+                  "f1": 0.5255,
+                  "support": 267
+                },
+                "kemudahan_penggunaan": {
+                  "precision": 0.6343,
+                  "recall": 0.6059,
+                  "f1": 0.6198,
+                  "support": 1185
+                },
+                "fitur_inovasi": {
+                  "precision": 0.4779,
+                  "recall": 0.5882,
+                  "f1": 0.5274,
+                  "support": 221
+                },
+                "biaya_risiko": {
+                  "precision": 0.5677,
+                  "recall": 0.7611,
+                  "f1": 0.6503,
+                  "support": 226
+                },
+                "layanan_pelanggan": {
+                  "precision": 0.5302,
+                  "recall": 0.7012,
+                  "f1": 0.6038,
+                  "support": 338
+                },
+                "kualitas_informasi": {
+                  "precision": 0.3047,
+                  "recall": 0.4815,
+                  "f1": 0.3732,
+                  "support": 81
+                },
+                "umum": {
+                  "precision": 0.8015,
+                  "recall": 0.5698,
+                  "f1": 0.6661,
+                  "support": 1346
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "kualitas_transaksi",
+                  "kualitas_sistem",
+                  "keamanan_privasi",
+                  "kemudahan_penggunaan",
+                  "fitur_inovasi",
+                  "biaya_risiko",
+                  "layanan_pelanggan",
+                  "kualitas_informasi",
+                  "umum"
+                ],
+                "matrix": [
+                  [
+                    977,
+                    72,
+                    16,
+                    70,
+                    19,
+                    43,
+                    27,
+                    15,
+                    30
+                  ],
+                  [
+                    135,
+                    2304,
+                    99,
+                    130,
+                    31,
+                    20,
+                    78,
+                    25,
+                    59
+                  ],
+                  [
+                    8,
+                    39,
+                    175,
+                    26,
+                    3,
+                    2,
+                    7,
+                    5,
+                    2
+                  ],
+                  [
+                    154,
+                    125,
+                    43,
+                    718,
+                    34,
+                    9,
+                    32,
+                    13,
+                    57
+                  ],
+                  [
+                    17,
+                    21,
+                    6,
+                    16,
+                    130,
+                    8,
+                    7,
+                    5,
+                    11
+                  ],
+                  [
+                    9,
+                    7,
+                    10,
+                    8,
+                    7,
+                    172,
+                    5,
+                    1,
+                    7
+                  ],
+                  [
+                    16,
+                    25,
+                    9,
+                    12,
+                    5,
+                    3,
+                    237,
+                    8,
+                    23
+                  ],
+                  [
+                    6,
+                    10,
+                    4,
+                    5,
+                    7,
+                    5,
+                    4,
+                    39,
+                    1
+                  ],
+                  [
+                    115,
+                    136,
+                    37,
+                    147,
+                    36,
+                    41,
+                    50,
+                    17,
+                    767
+                  ]
+                ]
+              }
+            },
+            "sentiment": {
+              "n": 7814,
+              "accuracy": 0.8979,
+              "macro_f1": 0.6872,
+              "per_label": {
+                "negatif": {
+                  "precision": 0.8983,
+                  "recall": 0.9363,
+                  "f1": 0.9169,
+                  "support": 3990
+                },
+                "netral": {
+                  "precision": 0.1847,
+                  "recall": 0.3087,
+                  "f1": 0.2312,
+                  "support": 149
+                },
+                "positif": {
+                  "precision": 0.9495,
+                  "recall": 0.88,
+                  "f1": 0.9134,
+                  "support": 3675
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "negatif",
+                  "netral",
+                  "positif"
+                ],
+                "matrix": [
+                  [
+                    3736,
+                    117,
+                    137
+                  ],
+                  [
+                    68,
+                    46,
+                    35
+                  ],
+                  [
+                    355,
+                    86,
+                    3234
+                  ]
+                ]
+              }
+            },
+            "urgency": {
+              "n": 122,
+              "accuracy": 0.8443,
+              "macro_f1": 0.8534,
+              "per_label": {
+                "kritis": {
+                  "precision": 0.7857,
+                  "recall": 1.0,
+                  "f1": 0.88,
+                  "support": 11
+                },
+                "tinggi": {
+                  "precision": 0.9038,
+                  "recall": 0.8103,
+                  "f1": 0.8545,
+                  "support": 58
+                },
+                "normal": {
+                  "precision": 0.8036,
+                  "recall": 0.8491,
+                  "f1": 0.8257,
+                  "support": 53
+                }
+              },
+              "confusion": {
+                "labels": [
+                  "kritis",
+                  "tinggi",
+                  "normal"
+                ],
+                "matrix": [
+                  [
+                    11,
+                    0,
+                    0
+                  ],
+                  [
+                    0,
+                    47,
+                    11
+                  ],
+                  [
+                    3,
+                    5,
+                    45
+                  ]
+                ]
+              },
+              "kritis_recall": 1.0,
+              "kritis_precision": 0.7857
+            }
+          },
+          "needs_review_rate": 0.2132,
+          "throughput_per_s": 7.1,
+          "latency_ms_single": {
+            "p50": 111.06,
+            "p95": 171.73
+          },
+          "size_mb": 498.6
+        }
+      },
+      "rules_urgency": {
+        "n": 122,
+        "accuracy": 0.6557,
+        "macro_f1": 0.6372,
+        "per_label": {
+          "kritis": {
+            "precision": 0.5833,
+            "recall": 0.6364,
+            "f1": 0.6087,
+            "support": 11
+          },
+          "tinggi": {
+            "precision": 0.963,
+            "recall": 0.4483,
+            "f1": 0.6118,
+            "support": 58
+          },
+          "normal": {
+            "precision": 0.5663,
+            "recall": 0.8868,
+            "f1": 0.6912,
+            "support": 53
+          }
+        },
+        "confusion": {
+          "labels": [
+            "kritis",
+            "tinggi",
+            "normal"
+          ],
+          "matrix": [
+            [
+              7,
+              0,
+              4
+            ],
+            [
+              0,
+              26,
+              32
+            ],
+            [
+              5,
+              1,
+              47
+            ]
+          ]
+        },
+        "kritis_recall": 0.6364,
+        "kritis_precision": 0.5833
+      }
+    }
+  },
+  "urgency_label_status": "silver: not human-verified"
+}

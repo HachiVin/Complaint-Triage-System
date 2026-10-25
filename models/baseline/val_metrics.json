@@ -1,0 +1,287 @@
+{
+  "version": "baseline:v1",
+  "n": 7814,
+  "tasks": {
+    "aspect": {
+      "n": 7814,
+      "accuracy": 0.688,
+      "macro_f1": 0.6023,
+      "per_label": {
+        "kualitas_transaksi": {
+          "precision": 0.6934,
+          "recall": 0.7018,
+          "f1": 0.6976,
+          "support": 1405
+        },
+        "kualitas_sistem": {
+          "precision": 0.8151,
+          "recall": 0.791,
+          "f1": 0.8028,
+          "support": 2502
+        },
+        "keamanan_privasi": {
+          "precision": 0.4327,
+          "recall": 0.551,
+          "f1": 0.4847,
+          "support": 245
+        },
+        "kemudahan_penggunaan": {
+          "precision": 0.6411,
+          "recall": 0.6077,
+          "f1": 0.624,
+          "support": 1267
+        },
+        "fitur_inovasi": {
+          "precision": 0.4788,
+          "recall": 0.5097,
+          "f1": 0.4938,
+          "support": 155
+        },
+        "biaya_risiko": {
+          "precision": 0.5358,
+          "recall": 0.6434,
+          "f1": 0.5847,
+          "support": 244
+        },
+        "layanan_pelanggan": {
+          "precision": 0.6014,
+          "recall": 0.6522,
+          "f1": 0.6258,
+          "support": 391
+        },
+        "kualitas_informasi": {
+          "precision": 0.3916,
+          "recall": 0.5333,
+          "f1": 0.4516,
+          "support": 105
+        },
+        "umum": {
+          "precision": 0.6725,
+          "recall": 0.6393,
+          "f1": 0.6555,
+          "support": 1500
+        }
+      },
+      "confusion": {
+        "labels": [
+          "kualitas_transaksi",
+          "kualitas_sistem",
+          "keamanan_privasi",
+          "kemudahan_penggunaan",
+          "fitur_inovasi",
+          "biaya_risiko",
+          "layanan_pelanggan",
+          "kualitas_informasi",
+          "umum"
+        ],
+        "matrix": [
+          [
+            986,
+            68,
+            27,
+            110,
+            10,
+            53,
+            28,
+            17,
+            106
+          ],
+          [
+            109,
+            1979,
+            58,
+            109,
+            23,
+            19,
+            48,
+            22,
+            135
+          ],
+          [
+            22,
+            29,
+            135,
+            16,
+            3,
+            12,
+            10,
+            2,
+            16
+          ],
+          [
+            140,
+            118,
+            36,
+            770,
+            15,
+            10,
+            22,
+            13,
+            143
+          ],
+          [
+            8,
+            18,
+            4,
+            18,
+            79,
+            4,
+            3,
+            2,
+            19
+          ],
+          [
+            25,
+            10,
+            11,
+            10,
+            2,
+            157,
+            7,
+            5,
+            17
+          ],
+          [
+            16,
+            43,
+            8,
+            22,
+            7,
+            7,
+            255,
+            8,
+            25
+          ],
+          [
+            8,
+            16,
+            0,
+            10,
+            4,
+            2,
+            3,
+            56,
+            6
+          ],
+          [
+            108,
+            147,
+            33,
+            136,
+            22,
+            29,
+            48,
+            18,
+            959
+          ]
+        ]
+      }
+    },
+    "sentiment": {
+      "n": 7814,
+      "accuracy": 0.8925,
+      "macro_f1": 0.6692,
+      "per_label": {
+        "negatif": {
+          "precision": 0.8688,
+          "recall": 0.9262,
+          "f1": 0.8966,
+          "support": 3360
+        },
+        "netral": {
+          "precision": 0.2113,
+          "recall": 0.184,
+          "f1": 0.1967,
+          "support": 163
+        },
+        "positif": {
+          "precision": 0.9369,
+          "recall": 0.893,
+          "f1": 0.9144,
+          "support": 4291
+        }
+      },
+      "confusion": {
+        "labels": [
+          "negatif",
+          "netral",
+          "positif"
+        ],
+        "matrix": [
+          [
+            3112,
+            46,
+            202
+          ],
+          [
+            77,
+            30,
+            56
+          ],
+          [
+            393,
+            66,
+            3832
+          ]
+        ]
+      }
+    },
+    "urgency": {
+      "n": 91,
+      "accuracy": 0.978,
+      "macro_f1": 0.9749,
+      "per_label": {
+        "kritis": {
+          "precision": 1.0,
+          "recall": 0.9333,
+          "f1": 0.9655,
+          "support": 15
+        },
+        "tinggi": {
+          "precision": 0.9565,
+          "recall": 1.0,
+          "f1": 0.9778,
+          "support": 22
+        },
+        "normal": {
+          "precision": 0.9815,
+          "recall": 0.9815,
+          "f1": 0.9815,
+          "support": 54
+        }
+      },
+      "confusion": {
+        "labels": [
+          "kritis",
+          "tinggi",
+          "normal"
+        ],
+        "matrix": [
+          [
+            14,
+            0,
+            1
+          ],
+          [
+            0,
+            22,
+            0
+          ],
+          [
+            0,
+            1,
+            53
+          ]
+        ]
+      },
+      "kritis_recall": 0.9333,
+      "kritis_precision": 1.0
+    }
+  },
+  "needs_review_rate": 0.3658,
+  "throughput_per_s": 2306.7,
+  "latency_ms_single": {
+    "p50": 6.77,
+    "p95": 8.25
+  }
+}

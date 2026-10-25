@@ -11,7 +11,8 @@ versions are driving complaints, and lets a manager ask questions about the data
 > **Status: v0.1, first results on real data.** The pipeline, API, dashboard, agent and deployment are
 > complete and tested. Aspect and sentiment use the dataset's own labels. **Urgency labels are silver
 > (not yet human-verified)**: keyword rules and an LLM cross-check each other; human review of the test
-> period is the next step (see [Data](#data)). The fine-tuned IndoBERT results are in progress.
+> period is the next step (see [Data](#data)). Fine-tuned IndoBERT beats the TF-IDF baseline on every
+> task and halves the share of predictions a person has to check (see [Results](#results)).
 
 ![Dashboard](docs/screenshot.png)
 
@@ -107,8 +108,8 @@ Choices that matter:
   review decided by a person in Label Studio (`crosscheck` puts them at the top of the list), then
   `merge`. The test period holds only 11 critical reviews, so one review moves critical recall by 9%.
 - **The urgency sample is enriched**: 20% flagged *kritis* by the rules, 20% flagged *tinggi*, 35% other
-  negative reviews, 25% the rest, because critical reviews are rare. The share of critical reviews in the natural distribution is reported separately:
-  [ISI: % kritis di sampel acak].
+  negative reviews, 25% the rest, because critical reviews are rare. For scale: on all 52,098 reviews the
+  rules flag 1.0% as *kritis* and 7.6% as *tinggi* (a rule-based estimate, not a human count).
 
 Citation: Pratama, M. A. et al. (2026). *USH BRImo Dataset: Aspect-Based Sentiment Analysis of BRImo
 Mobile Banking Reviews*. Mendeley Data, V1. doi:10.17632/7253k33f62.1
@@ -117,7 +118,7 @@ Mobile Banking Reviews*. Mendeley Data, V1. doi:10.17632/7253k33f62.1
 
 | Decision | Why | Cost |
 |---|---|---|
-| **Fine-tuned IndoBERT** instead of prompting an LLM per review | Scoring 100k reviews with an LLM means 100k paid calls and minutes of latency. The fine-tuned model runs on a CPU at [ISI] reviews/s for free, and its output is the same every run | Needs labelled data and a GPU to train (free Colab T4 is enough) |
+| **Fine-tuned IndoBERT** instead of prompting an LLM per review | Scoring 100k reviews with an LLM means 100k paid calls and minutes of latency. The fine-tuned model scores about 7 reviews/s on a Colab CPU and a full backfill takes minutes on a free GPU, at no cost per review, and its output is the same every run | Needs labelled data and a GPU to train (free Colab T4 is enough) |
 | **One multi-task model** instead of three | One encoder pass per review gives three labels. A third of the memory and latency | Tasks compete; urgency gets loss weight 2.0 so it is not drowned out by the much larger aspect/sentiment set |
 | **TF-IDF + logistic regression baseline** kept | The bar IndoBERT must clear, and the fallback that runs without torch (small Docker image) | Weaker on paraphrases and slang |
 | **Model selection on mean macro-F1 + critical recall** | Missing a critical complaint costs more than reading one extra review | More false alarms in the queue; the threshold and the precision are reported |
@@ -140,18 +141,35 @@ tokens.
 
 ## Results
 
-Test set: newest 15% of USH BRImo reviews (time split, 7,814 reviews, 23 Apr to 19 Jun 2026). External:
-other banks' apps, never trained on. Filled by `scripts/evaluate.py`; full report in `docs/results.md`.
+Test set: newest 15% of USH BRImo reviews (time split, 7,814 reviews, 23 Apr to 19 Jun 2026). Filled by
+`scripts/evaluate.py`; full report in `docs/results.md`. An external test set (other banks' apps, never
+trained on) is planned for v0.2.
 
 Aspect and sentiment are scored on all 7,814 test reviews against the dataset labels. **Urgency is scored
 on 122 reviews with silver labels (11 critical)**, see above.
 
-| Model | Aspect macro-F1 | Sentiment macro-F1 | Urgency macro-F1 (silver) | Critical recall (silver, n=11) | Latency p50 (CPU) | Size |
-|---|---|---|---|---|---|---|
-| Keyword rules (urgency only) | – | – | 0.637 | 0.636 | <1 ms | – |
-| TF-IDF + LogReg | 0.592 | 0.652 | 0.805 | 1.000 | [ISI: dari docs/results.md] | 33.7 MB |
-| IndoBERT multi-task | [ISI] | [ISI] | [ISI] | [ISI] | [ISI] | [ISI] |
-| IndoBERT multi-task, external set | [ISI] | [ISI] | [ISI] | [ISI] | – | – |
+| Model | Aspect macro-F1 | Sentiment macro-F1 | Urgency macro-F1 (silver) | Critical recall (silver, n=11) | Needs review | Latency p50 (CPU) | Size |
+|---|---|---|---|---|---|---|---|
+| Keyword rules (urgency only) | – | – | 0.637 | 0.636 | – | <1 ms | – |
+| TF-IDF + LogReg | 0.591 | 0.652 | 0.805 | 1.000 | 39.2% | 6.9 ms | 33.7 MB |
+| **IndoBERT multi-task** (3 epochs, 9 min on a Colab T4) | **0.612** | **0.687** | **0.853** | 1.000 | **21.3%** | 111 ms | 499 MB |
+
+Latency is one review at a time on a Colab CPU. *Needs review* is the share of reviews where any
+prediction is below 0.55 confidence and the dashboard flags it for a person.
+
+What the numbers say:
+
+- **IndoBERT wins on every task**, by 2.1 points on aspect, 3.5 on sentiment and 4.8 on (silver) urgency.
+  Both learned models beat the keyword rules on urgency by a wide margin (0.80 to 0.85 against 0.64).
+- **The bigger win is operational.** IndoBERT is confident on more reviews, so the share a CX agent has to
+  check falls from 39% to 21%. BRImo gets about 4,300 reviews a month that pass the 3-word filter, so
+  that is roughly 780 fewer manual checks a month.
+- **It costs about 15x the latency and 15x the size.** 111 ms per review is fine for the live API, but scoring a
+  large backlog on CPU is slow (about 7 reviews/s), so backfills run in batch on a GPU.
+- **Aspect is the hard task** (0.61): nine classes, many one-line reviews, and label noise in the dataset
+  (see Data). Per-class scores are in `docs/results.json`.
+- **Critical recall of 1.000 is not a claim**: 11 critical reviews with silver labels. It will be
+  re-measured on the human-verified test set in v0.2.
 
 Agent, on `data/agent_eval/questions.jsonl` (questions with a known answer from hand-written SQL):
 [ISI: x/5 benar, rata-rata langkah, rata-rata token] (`scripts/eval_agent.py`).
@@ -227,9 +245,13 @@ gcloud run deploy complaint-triage --source . --region asia-southeast2 --allow-u
   --set-secrets DATABASE_URL=triage-db:latest,LLM_API_KEY=triage-llm:latest
 ```
 
-Secrets live in Secret Manager, never in the image or the repo. The default image serves the TF-IDF
-model. To serve IndoBERT, build with `--build-arg WITH_TORCH=1`, put the model in `models/`, and use
-`--memory 2Gi`.
+Secrets live in Secret Manager, never in the image or the repo.
+
+Which model to serve is a cost decision. The default image serves the TF-IDF model: no torch, 7 ms per
+review, fits in 1 GiB. IndoBERT is more accurate and halves manual checks, but needs
+torch, 2 GiB of memory and about 111 ms per review on CPU. To serve it, build with
+`--build-arg WITH_TORCH=1`, put the model in `models/`, set `MODEL_DIR` and use `--memory 2Gi`. Either
+way, a large backlog is scored in batch (`scripts/ingest.py`) rather than through the API.
 
 ## Monitoring
 
@@ -244,9 +266,9 @@ model. To serve IndoBERT, build with `--build-arg WITH_TORCH=1`, put the model i
 
 ## Limitations
 
-- **One bank's app in training.** BRImo's users, features and slang are not every bank's. The external
-  test set measures how much that costs: [ISI].
-- **Dataset labels are taken as given** after a spot check. Systematic errors in them become the model's
+- **One bank's app in training.** BRImo's users, features and slang are not every bank's. An external
+  test set of other banks' reviews (planned for v0.2) will measure how much that costs.
+- **Dataset labels are taken as given** (the planned spot check is in v0.2). Systematic errors in them become the model's
   errors.
 - **Urgency labels are not human-verified yet (v0.1).** They come from keyword rules and an LLM, and the
   training set holds only the cases both agree on. Human review of the test period is the first task of
