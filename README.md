@@ -6,7 +6,7 @@ money is stuck right now. Complaint Triage System reads every review and labels 
 and **urgency**. It puts the critical ones in a queue for the CX team, shows which aspects and app
 versions are driving complaints, and lets a manager ask questions about the data in plain Indonesian.
 
-**Live demo:** [ISI: URL Modal] (serverless: the first visit after a quiet period takes up to a minute while the model loads)
+**Live demo:** https://hachivin--complaint-triage-web.us-east.modal.run (serverless: the first visit after a quiet period takes up to a minute while the model loads)
 
 > **Status: v0.1, first results on real data.** The pipeline, API, dashboard, agent and deployment are
 > complete and tested. Aspect and sentiment use the dataset's own labels. **Urgency labels are silver
@@ -172,7 +172,18 @@ What the numbers say:
   re-measured on the human-verified test set in v0.2.
 
 Agent, on `data/agent_eval/questions.jsonl` (questions with a known answer from hand-written SQL):
-[ISI: x/5 benar, rata-rata langkah, rata-rata token] (`scripts/eval_agent.py`).
+**4/5 correct**, 2.8 tool steps and about 2,600 tokens per question, 5.6 s mean latency on the Groq free
+tier (`scripts/eval_agent.py`, results in `docs/agent_eval.json`). How it got there, honestly:
+
+- First run: 3/5. One "miss" was the checker, not the agent: it wrote 14 020 with a narrow no-break space
+  as the thousands separator. The matcher now handles that, and the prompt asks for Indonesian number
+  format (14.020).
+- The real miss: asked which app version had the most critical reviews, the agent picked `NULL` (version
+  not recorded). The prompt now says NULL is not a version and should be filtered out when ranking.
+- Second run: 4/5. The remaining miss is an off-by-one date window: "last 7 days" was written as
+  `>= max - 7`, which is 8 days. A rule for this was added after that run and has not been re-measured.
+- Five questions, and the prompt rules were written after seeing the failures, so treat 4/5 as a smoke
+  test, not an accuracy figure. v0.2 needs a larger question set kept apart from prompt tuning.
 
 ## Run it
 

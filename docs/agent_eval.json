@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "questions": 5,
+    "accuracy": 0.8,
+    "mean_steps": 2.8,
+    "mean_latency_ms": 5648.6,
+    "mean_tokens": 2581.8,
+    "failed_runs": 0
+  },
+  "results": [
+    {
+      "id": "q01",
+      "question": "Berapa jumlah ulasan dengan urgensi kritis dalam 7 hari terakhir data?",
+      "gold": 26.0,
+      "correct": false,
+      "answer": "Jumlah ulasan dengan urgensi **kritis** dalam 7 hari terakhir (12 – 19 Juni 2026) adalah **31** ulasan.",
+      "queries": [
+        "WITH latest AS (SELECT max(review_date) AS max_date FROM v_reviews) SELECT COUNT(*) AS kritis_count FROM v_reviews, latest WHERE urgency='kritis' AND review_date >= latest.max_date - INTERVAL '7 days';",
+        "SELECT max(review_date) AS max_date FROM v_reviews;"
+      ],
+      "steps": 3,
+      "latency_ms": 3321.0,
+      "tokens": 2380,
+      "error": null
+    },
+    {
+      "id": "q02",
+      "question": "Aspek apa yang paling banyak dikeluhkan (sentimen negatif) secara keseluruhan, dan berapa jumlah ulasannya?",
+      "gold": 14020.0,
+      "correct": true,
+      "answer": "Aspek yang paling banyak dikeluhkan dengan sentimen negatif adalah **kualitas_sistem**, dengan **14.020** ulasan.",
+      "queries": [
+        "SELECT aspect, COUNT(*) AS cnt FROM v_reviews WHERE sentiment='negatif' GROUP BY aspect ORDER BY cnt DESC LIMIT 1;"
+      ],
+      "steps": 2,
+      "latency_ms": 1552.0,
+      "tokens": 1543,
+      "error": null
+    },
+    {
+      "id": "q03",
+      "question": "Berapa persen ulasan yang bersentimen negatif?",
+      "gold": 0.463,
+      "correct": true,
+      "answer": "Persentase ulasan bersentimen negatif: **46,3 %** (dari **52 098** ulasan, periode 1 Juli 2025 – 19 Juni 2026).",
+      "queries": [
+        "SELECT\n  COUNT(*) FILTER (WHERE sentiment = 'negatif')::numeric / COUNT(*) * 100 AS pct_negatif,\n  COUNT(*) AS total_reviews\nFROM v_reviews;",
+        "SELECT MIN(review_date) AS min_date, MAX(review_date) AS max_date FROM v_reviews;"
+      ],
+      "steps": 3,
+      "latency_ms": 2610.9,
+      "tokens": 2552,
+      "error": null
+    },
+    {
+      "id": "q04",
+      "question": "Berapa rata-rata rating ulasan dengan aspek kualitas transaksi?",
+      "gold": 4.13,
+      "correct": true,
+      "answer": "Rata‑rata rating ulasan dengan aspek **kualitas transaksi** adalah **4,13** (2 desimal).  \nJumlah ulasan yang dihitung: **9.781**.",
+      "queries": [
+        "SELECT COUNT(*) AS cnt, AVG(rating) AS avg_rating FROM v_reviews WHERE aspect='kualitas_transaksi' AND rating IS NOT NULL;"
+      ],
+      "steps": 2,
+      "latency_ms": 2577.4,
+      "tokens": 2386,
+      "error": null
+    },
+    {
+      "id": "q05",
+      "question": "Berapa banyak ulasan berurgensi kritis yang ditulis untuk versi aplikasi dengan keluhan kritis terbanyak?",
+      "gold": 310.0,
+      "correct": true,
+      "answer": "Berikut hasilnya:\n\n- **Versi aplikasi dengan keluhan kritis terbanyak**: **2.87.1**  \n- **Jumlah ulasan berurgensi kritis**: **310** ulasan  \n- **Periode data**: 1 Juli 2025 – 19 Juni 2026 (dari `min_date` hingga `max_date`)  \n- **Jumlah ulasan total yang dianalisis**: **52.098** ulasan (semua `app_version` tidak NULL)",
+      "queries": [
+        "SELECT MAX(review_date) AS max_date, MIN(review_date) AS min_date, COUNT(*) AS total_reviews FROM v_reviews;",
+        "SELECT app_version, COUNT(*) AS kritis_count\nFROM v_reviews\nWHERE urgency='kritis' AND app_version IS NOT NULL\nGROUP BY app_version\nORDER BY kritis_count DESC\nLIMIT 1;",
+        "SELECT app_version, COUNT(*) AS kritis_count\nFROM v_reviews\nWHERE urgency='kritis' AND app_version IS NOT NULL\nGROUP BY app_version\nORDER BY kritis_count DESC\nLIMIT 5;"
+      ],
+      "steps": 4,
+      "latency_ms": 18181.5,
+      "tokens": 4048,
+      "error": null
+    }
+  ]
+}

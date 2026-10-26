@@ -154,3 +154,14 @@ def test_prepare_refuses_synthetic_without_flag(tmp_path):
     res = run("scripts/prepare_data.py", "data/sample/demo_reviews.jsonl", tmp_path / "p", "--allow-synthetic")
     assert res.returncode == 0, res.stderr
     assert (tmp_path / "p" / "test.jsonl").exists() and (tmp_path / "p" / "split_report.json").exists()
+
+
+def test_eval_agent_number_matching():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("eval_agent", ROOT / "scripts" / "eval_agent.py")
+    ev = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ev)
+    assert ev.matches(14020, "ada **14 020 ulasan** (data hingga 19 Juni 2026)")
+    assert ev.matches(14020, "sebanyak 14.020 ulasan")
+    assert ev.matches(0.463, "46,3% ulasan negatif")
+    assert not ev.matches(310, "620 ulasan berurgensi kritis")

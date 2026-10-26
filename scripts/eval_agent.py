@@ -26,7 +26,9 @@ from complaint_triage.db import Database  # noqa: E402
 
 def numbers_in(text: str) -> list[float]:
     found = []
-    for m in re.finditer(r"\d[\d.,]*", text or ""):
+    # LLMs sometimes group thousands with a (narrow) no-break space: "14\u202f020"
+    text = re.sub(r"(?<=\d)[\u00a0\u2009\u202f](?=\d{3}(?!\d))", "", text or "")
+    for m in re.finditer(r"\d[\d.,]*", text):
         s = m.group(0).rstrip(".,")
         # Indonesian formatting: 1.234 thousands, 12,5 decimals
         if re.fullmatch(r"\d{1,3}(\.\d{3})+", s):
