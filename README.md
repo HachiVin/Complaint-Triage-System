@@ -6,7 +6,7 @@ money is stuck right now. Complaint Triage System reads every review and labels 
 and **urgency**. It puts the critical ones in a queue for the CX team, shows which aspects and app
 versions are driving complaints, and lets a manager ask questions about the data in plain Indonesian.
 
-**Live demo:** [ISI: URL Cloud Run]
+**Live demo:** [ISI: URL Modal] (serverless: the first visit after a quiet period takes up to a minute while the model loads)
 
 > **Status: v0.1, first results on real data.** The pipeline, API, dashboard, agent and deployment are
 > complete and tested. Aspect and sentiment use the dataset's own labels. **Urgency labels are silver
@@ -237,20 +237,33 @@ ruff check . && pytest
 
 ## Deployment
 
-**Live demo: Hugging Face Spaces (Docker) + Neon PostgreSQL**, both on free tiers.
+**Live demo: Modal (serverless, starter plan) + Neon PostgreSQL (free).** IndoBERT is served live.
 
-1. Publish the IndoBERT model to the Hub: `python scripts/push_model.py models/indobert-mt <user>/complaint-triage-indobert`.
-2. Load the reviews and IndoBERT predictions into Neon from a free Colab GPU
-   (`notebooks/ingest_colab.ipynb`, a few minutes; on CPU it would take about 2 hours).
-3. Create a Docker Space with the two files in `deploy/hf-space/`. Its Dockerfile builds this repository
-   from GitHub. Set `MODEL_DIR=hf://<user>/complaint-triage-indobert` and `ALLOW_CORRECTIONS=0` as
-   variables and `DATABASE_URL` (and optionally `LLM_API_KEY`) as secrets.
+- **Batch:** IndoBERT scores all 52,098 reviews once on a free Colab GPU (`notebooks/ingest_colab.ipynb`,
+  a few minutes; about 2 hours on CPU) and writes the predictions to Neon. The dashboard, the critical
+  queue and the agent read those.
+- **Online:** `modal_app.py` runs the FastAPI app with the same IndoBERT model (1 CPU core, 2 GB) for
+  "Coba klasifikasi". The model is baked into the container image from the Hugging Face Hub
+  (`HachiVin/complaint-triage-indobert`), so a cold start does not download it again.
+- **Cost control:** the container starts on the first request and stops two minutes after the last one,
+  and at most one copy runs. Without a payment method the starter plan gives $1 of compute a month,
+  roughly 15 hours of running time at these settings, which is plenty for occasional demos. When it is
+  used up the app pauses until the next month; nothing is charged.
 
-The free Space has 2 vCPU and 16 GB RAM, enough to serve IndoBERT at about 111 ms per review. It sleeps
-after two days without visitors and takes about a minute to wake up. Label corrections are switched off
-in the public demo so visitors cannot change the stored labels.
+Steps:
 
-**Google Cloud Run** (Jakarta region), with PostgreSQL on Cloud SQL or Neon:
+1. Publish IndoBERT to the Hub: `python scripts/push_model.py models/indobert-mt <user>/complaint-triage-indobert`.
+2. Create a free Neon project (Singapore), then run `notebooks/ingest_colab.ipynb` with its connection string.
+3. `pip install modal`, `python -m modal setup`, create a Modal secret `complaint-triage` holding
+   `DATABASE_URL` (and optionally `LLM_API_KEY`), then `python -m modal deploy modal_app.py`.
+
+**Alternative without any compute budget: Render free web service** (512 MB, no card). Too small for
+IndoBERT, so it serves the TF-IDF model online while the dashboard still shows the IndoBERT predictions
+from Neon. Connect the repository, runtime Docker (root `Dockerfile`), instance type Free, and set
+`DATABASE_URL` and `ALLOW_CORRECTIONS=0`. The footer of the dashboard names the live and the batch model.
+(`deploy/hf-space/` holds a Hugging Face Space setup; Docker Spaces need a paid plan since July 2026.)
+
+**Google Cloud Run** (Jakarta region, needs a billing account), with PostgreSQL on Cloud SQL or Neon:
 
 ```bash
 gcloud run deploy complaint-triage --source . --region asia-southeast2 --allow-unauthenticated \
@@ -286,6 +299,11 @@ way, a large backlog is scored in batch (`scripts/ingest.py`) rather than throug
 - **Urgency labels are not human-verified yet (v0.1).** They come from keyword rules and an LLM, and the
   training set holds only the cases both agree on. Human review of the test period is the first task of
   v0.2; until then urgency numbers say how well the model matches the LLM, not a CX team.
+- **Urgency is over-predicted on real traffic.** On all 52,098 reviews IndoBERT labels 5.5% *kritis* and
+  26% *tinggi*, against 1.0% and 7.6% flagged by the keyword rules. The urgency training set was enriched
+  with likely-critical reviews (about a quarter *kritis*), so the model expects them far more often than
+  they occur (prior shift), and the critical queue holds false alarms. v0.2: correct the class priors
+  and tune the decision threshold on the human-verified test set.
 - **Reviews are not the whole picture.** Customers who call or tweet do not show up here, and app-store
   reviewers skew towards strong opinions.
 - **The agent can be wrong** even when its SQL is valid (a wrong filter, a misread question). That is why
@@ -303,7 +321,8 @@ scripts/        inspect, import, scrape, Label Studio, prepare, train, evaluate,
                 agent eval, demo
 sql/            schema and the read-only agent role
 notebooks/      Colab notebooks: training, and scoring the demo database on a GPU
-deploy/hf-space/  Dockerfile and card for the Hugging Face Space
+deploy/hf-space/  Hugging Face Space setup (Docker Spaces need a paid plan)
+modal_app.py    Modal deployment (live demo)
 docs/           annotation guide, Label Studio config, results
 tests/          unit tests, PostgreSQL and API tests, agent tests with a scripted LLM
 ```
