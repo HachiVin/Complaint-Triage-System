@@ -14,7 +14,7 @@ versions are driving complaints, and lets a manager ask questions about the data
 > period is the next step (see [Data](#data)). Fine-tuned IndoBERT beats the TF-IDF baseline on every
 > task and halves the share of predictions a person has to check (see [Results](#results)).
 
-![Dashboard](docs/screenshot.png)
+![Dashboard](docs/dashboard.png)
 
 ## The problem
 
