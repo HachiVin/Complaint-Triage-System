@@ -3,99 +3,193 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>Complaint Triage System: dasbor keluhan nasabah</title>
+<meta name="description" content="Memilah ulasan aplikasi mobile banking: mana yang harus ditangani hari ini, aspek apa yang dikeluhkan, dan jawaban atas pertanyaan data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
 <script src="/static/vendor/chart-4.4.1.umd.js" defer></script>
 </head>
 <body>
+<a class="skip" href="#main">Lewati ke konten</a>
+
 <header class="top">
-  <div class="wrap bar">
-    <span class="brand">Complaint Triage</span>
-    <div class="filters">
-      <label>Aplikasi <select id="app"></select></label>
-      <label>Periode
-        <select id="weeks"><option value="2">2 minggu</option><option value="4" selected>4 minggu</option>
-          <option value="8">8 minggu</option><option value="12">12 minggu</option></select>
+  <div class="wrap top-bar">
+    <a class="brand" href="#ringkasan" aria-label="Complaint Triage, ke ringkasan">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="4" rx="1" fill="var(--kritis)"/>
+        <rect x="3" y="10" width="12" height="4" rx="1" fill="var(--tinggi)"/>
+        <rect x="3" y="16" width="7" height="4" rx="1" fill="var(--normal)"/>
+      </svg>
+      <span>Complaint Triage</span>
+    </a>
+    <nav class="tabs" aria-label="Halaman">
+      <a href="#ringkasan" data-view="ringkasan">Ringkasan</a>
+      <a href="#antrean" data-view="antrean">Antrean <span class="tab-count" id="nav-kritis"></span></a>
+      <a href="#tanya" data-view="tanya">Tanya data</a>
+      <a href="#coba" data-view="coba">Coba model</a>
+    </nav>
+    <div class="scope">
+      <label><span class="sr">Aplikasi</span><select id="app" aria-label="Aplikasi"></select></label>
+      <label><span class="sr">Periode</span>
+        <select id="weeks" aria-label="Periode">
+          <option value="2">2 minggu terakhir</option>
+          <option value="4" selected>4 minggu terakhir</option>
+          <option value="8">8 minggu terakhir</option>
+          <option value="12">12 minggu terakhir</option>
+        </select>
       </label>
-      <a href="/docs" class="link">API</a>
     </div>
   </div>
 </header>
 
-<main class="wrap">
-  <p id="demo-note" class="note" hidden></p>
-  <p id="period" class="muted small"></p>
+<p id="status" class="status" role="status" hidden></p>
 
-  <section class="kpis">
-    <div class="kpi"><span class="k-label">Ulasan</span><strong id="k-reviews">–</strong></div>
-    <div class="kpi"><span class="k-label">Sentimen negatif</span><strong id="k-neg">–</strong></div>
-    <div class="kpi danger"><span class="k-label">Keluhan kritis</span><strong id="k-kritis">–</strong>
-      <span id="k-kritis-delta" class="k-sub"></span></div>
-    <div class="kpi"><span class="k-label">Urgensi tinggi</span><strong id="k-tinggi">–</strong></div>
-    <div class="kpi"><span class="k-label">Rata-rata rating</span><strong id="k-rating">–</strong></div>
-    <div class="kpi"><span class="k-label">Perlu dicek manual</span><strong id="k-review">–</strong></div>
+<main id="main" class="wrap">
+
+  <!-- Ringkasan -->
+  <section id="view-ringkasan" class="view" aria-labelledby="h-ringkasan">
+    <div id="intro" class="intro" hidden>
+      <p>Sistem ini membaca setiap ulasan aplikasi mobile banking, lalu menandai aspek yang dikeluhkan, sentimen,
+        dan seberapa mendesak ulasan itu harus dibaca tim layanan nasabah hari ini.</p>
+      <div class="intro-actions">
+        <a class="btn" href="#antrean">Lihat keluhan kritis</a>
+        <a class="btn ghost" href="#tanya">Tanya data dengan bahasa biasa</a>
+        <a class="btn ghost" href="#coba">Coba klasifikasi ulasan</a>
+      </div>
+      <button type="button" class="intro-close" id="intro-close" aria-label="Tutup penjelasan">×</button>
+    </div>
+
+    <div class="headline">
+      <h1 id="h-ringkasan"><span id="period-title">Memuat data…</span></h1>
+      <p class="sub" id="period-sub"></p>
+      <dl class="facts" id="facts"></dl>
+    </div>
+
+    <div class="triage" aria-label="Pembagian urgensi ulasan">
+      <div class="triage-bar" id="triage-bar"></div>
+      <div class="triage-legend" id="triage-legend"></div>
+    </div>
+
+    <form class="askbar" id="askbar" autocomplete="off">
+      <label for="askbar-input" class="askbar-label">Tanya data</label>
+      <div class="askbar-row">
+        <input id="askbar-input" maxlength="500" placeholder="Misalnya: versi aplikasi mana yang paling banyak keluhan kritis?">
+        <button type="submit" class="btn">Tanya</button>
+      </div>
+      <p class="hint">Agent AI menulis query ke database ulasan, lalu menjawab dengan angka. Tekan <kbd>/</kbd> dari mana saja.</p>
+    </form>
+
+    <div class="split">
+      <section class="block" aria-labelledby="h-aspek">
+        <div class="block-head">
+          <h2 id="h-aspek">Apa yang dikeluhkan</h2>
+          <p class="sub">Ulasan negatif per aspek. Klik aspek untuk membuka antreannya.</p>
+        </div>
+        <ul class="aspects" id="aspects"></ul>
+      </section>
+      <section class="block" aria-labelledby="h-tren">
+        <div class="block-head">
+          <h2 id="h-tren">Tren mingguan</h2>
+          <p class="sub" id="trend-note">Ulasan negatif per minggu, empat aspek terbanyak.</p>
+        </div>
+        <div class="chart"><canvas id="trend" role="img" aria-label="Grafik ulasan negatif per minggu"></canvas></div>
+      </section>
+    </div>
+
+    <section class="block" aria-labelledby="h-versi">
+      <div class="block-head">
+        <h2 id="h-versi">Per versi aplikasi</h2>
+        <p class="sub">Versi dengan minimal 5 ulasan di periode ini. Lonjakan kritis di satu versi biasanya tanda insiden.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="versions">
+          <thead><tr><th scope="col">Versi</th><th scope="col" class="num">Ulasan</th><th scope="col" class="num">Negatif</th><th scope="col" class="num">Kritis</th><th scope="col"><span class="sr">Proporsi kritis</span></th></tr></thead>
+          <tbody id="versions"></tbody>
+        </table>
+      </div>
+    </section>
   </section>
 
-  <section class="grid">
-    <div class="card">
-      <h2>Keluhan per aspek</h2>
-      <p class="muted small">Jumlah ulasan negatif per aspek; angka merah = keluhan kritis.</p>
-      <ul id="aspects" class="bars"></ul>
+  <!-- Antrean -->
+  <section id="view-antrean" class="view" aria-labelledby="h-antrean" hidden>
+    <div class="headline">
+      <h1 id="h-antrean">Antrean keluhan</h1>
+      <p class="sub" id="queue-sub">Ulasan terbaru yang perlu dibaca, dari yang paling baru.</p>
     </div>
-    <div class="card">
-      <h2>Tren keluhan mingguan</h2>
-      <p class="muted small" id="trend-note">Ulasan negatif per minggu untuk empat aspek terbanyak.</p>
-      <div class="chart"><canvas id="trend" aria-label="Grafik tren keluhan mingguan" role="img"></canvas></div>
+    <div class="queue-controls">
+      <div class="segmented" role="radiogroup" aria-label="Urgensi">
+        <button type="button" role="radio" aria-checked="true" data-urgency="kritis"><i class="dot kritis"></i>Kritis <span id="seg-kritis"></span></button>
+        <button type="button" role="radio" aria-checked="false" data-urgency="tinggi"><i class="dot tinggi"></i>Tinggi <span id="seg-tinggi"></span></button>
+      </div>
+      <label class="inline-select">Aspek <select id="queue-aspect"><option value="">Semua aspek</option></select></label>
     </div>
+    <p class="explain" id="urgency-explain"></p>
+    <ol class="queue" id="queue"></ol>
+    <div class="queue-more"><button type="button" class="btn ghost" id="queue-more" hidden>Tampilkan 30 lagi</button></div>
   </section>
 
-  <section class="card">
-    <div class="head-row">
-      <h2>Antrean keluhan</h2>
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab active" data-urgency="kritis">Kritis</button>
-        <button type="button" class="tab" data-urgency="tinggi">Tinggi</button>
+  <!-- Tanya data -->
+  <section id="view-tanya" class="view" aria-labelledby="h-tanya" hidden>
+    <div class="headline">
+      <h1 id="h-tanya">Tanya data</h1>
+      <p class="sub">Tulis pertanyaan seperti ke analis. Agent AI menulis query SQL ke data ulasan, menjalankannya, lalu
+        menjawab dengan angka. Query yang dipakai selalu bisa dilihat.</p>
+    </div>
+    <form class="ask" id="ask-form" autocomplete="off">
+      <textarea id="question" rows="2" maxlength="500" placeholder="Tulis pertanyaan…"></textarea>
+      <div class="ask-row">
+        <p class="hint" id="ask-hint">Maksimal 5 pertanyaan per menit. Satu jawaban biasanya 5–15 detik.</p>
+        <button type="submit" class="btn" id="ask-btn">Tanya</button>
+      </div>
+    </form>
+    <div class="suggest" id="suggest">
+      <p class="suggest-title">Contoh pertanyaan</p>
+      <button type="button" class="chip">Versi aplikasi mana yang paling banyak keluhan kritis?</button>
+      <button type="button" class="chip">Aspek apa yang paling sering dikeluhkan bulan terakhir, dan berapa persen?</button>
+      <button type="button" class="chip">Beri 3 contoh ulasan kritis terbaru tentang transaksi beserta review_id-nya</button>
+      <button type="button" class="chip">Bagaimana rata-rata rating per bulan selama setahun terakhir?</button>
+    </div>
+    <div class="answers" id="answers" aria-live="polite"></div>
+  </section>
+
+  <!-- Coba model -->
+  <section id="view-coba" class="view" aria-labelledby="h-coba" hidden>
+    <div class="headline">
+      <h1 id="h-coba">Coba model</h1>
+      <p class="sub">Tempel satu ulasan atau keluhan. Model menebak aspek, sentimen, dan urgensinya, lengkap dengan
+        tingkat keyakinan.</p>
+    </div>
+    <div class="try">
+      <form id="cls-form" class="try-input">
+        <textarea id="cls-text" rows="6" maxlength="3000" placeholder="Contoh: transfer gagal tapi saldo terpotong, sudah 3 hari belum kembali"></textarea>
+        <div class="samples">
+          <span>Contoh:</span>
+          <button type="button" class="chip" data-sample="Transfer gagal tapi saldo terpotong, sudah 3 hari belum kembali">Saldo terpotong</button>
+          <button type="button" class="chip" data-sample="Sejak update tidak bisa login, verifikasi wajah gagal terus">Tidak bisa login</button>
+          <button type="button" class="chip" data-sample="Biaya admin transfer ke bank lain kemahalan">Biaya admin</button>
+          <button type="button" class="chip" data-sample="Aplikasinya mudah dipakai, transfer cepat, mantap">Pujian</button>
+        </div>
+        <button type="submit" class="btn">Klasifikasi</button>
+      </form>
+      <div class="try-output" id="cls-out" aria-live="polite">
+        <p class="empty">Hasil klasifikasi muncul di sini.</p>
       </div>
     </div>
-    <p class="muted small" id="queue-note">Ulasan terbaru dengan urgensi terpilih. Ubah label bila model salah;
-      koreksi tersimpan sebagai data latih berikutnya.</p>
-    <div class="table-wrap">
-      <table id="queue">
-        <thead><tr><th>Tanggal</th><th>Aspek</th><th>Rating</th><th>Ulasan</th><th>Versi</th><th>Urgensi</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
   </section>
-
-  <section class="grid">
-    <div class="card">
-      <h2>Tanya data</h2>
-      <p class="muted small">Agent menjawab dengan menulis query SQL ke data ulasan. Query yang dipakai ditampilkan.</p>
-      <form id="ask-form" class="ask">
-        <input id="question" maxlength="500" placeholder="Contoh: kenapa keluhan transaksi naik 2 minggu terakhir? beri contoh">
-        <button type="submit" class="primary" id="ask-btn">Tanya</button>
-      </form>
-      <div class="suggest">
-        <button type="button" class="chip">Versi aplikasi mana yang paling banyak keluhan kritis?</button>
-        <button type="button" class="chip">Bandingkan keluhan per aspek antar aplikasi</button>
-      </div>
-      <div id="answer" class="answer" hidden></div>
-      <details id="sql" class="sql" hidden><summary>Query yang dijalankan</summary><pre></pre></details>
-    </div>
-    <div class="card">
-      <h2>Coba klasifikasi</h2>
-      <p class="muted small">Tempel satu ulasan atau keluhan.</p>
-      <form id="cls-form">
-        <textarea id="cls-text" rows="4" maxlength="3000"
-          placeholder="Transfer gagal tapi saldo terpotong, sudah 3 hari belum kembali"></textarea>
-        <button type="submit" class="primary">Klasifikasi</button>
-      </form>
-      <dl id="cls-out" class="cls-out" hidden></dl>
-    </div>
-  </section>
-  <p class="muted small foot">Model: <span id="model"></span> · Prediksi bisa salah; keluhan kritis tetap dibaca
-    manusia sebelum ditindaklanjuti.</p>
 </main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <p id="model-line"></p>
+    <p>Data: USH BRImo Dataset (Mendeley Data, CC BY 4.0). Label urgensi belum diverifikasi manusia; prediksi bisa salah.
+      Keluhan kritis tetap dibaca manusia sebelum ditindaklanjuti.</p>
+    <p><a href="https://github.com/HachiVin/Complaint-Triage-System">Kode dan cara kerja di GitHub</a>
+      <span class="sep" aria-hidden="true"></span><a href="/docs">Dokumentasi API</a></p>
+  </div>
+</footer>
 <script src="/static/app.js" defer></script>
 </body>
 </html>
