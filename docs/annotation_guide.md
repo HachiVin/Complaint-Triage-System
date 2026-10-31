@@ -124,3 +124,28 @@ python scripts/labelstudio.py crosscheck data/interim/ls_urgency.json \
 Catatan: tebakan aturan memang membantu kecepatan, tapi bisa membuat anotator ikut-ikutan aturan.
 Karena itu evaluasi aturan vs model di test set tetap dilaporkan, dan jumlah label yang **diubah** dari
 tebakan aturan dicatat.
+
+## Test set v0.2: diputuskan manusia, tanpa petunjuk
+
+Label urgensi test di v0.1 berasal dari LLM (silver). Di v0.2 test set dilabeli ulang oleh manusia, dengan
+aturan berikut supaya hasilnya bisa dipercaya:
+
+1. `python scripts/labelstudio.py testset data/interim/brimo.jsonl data/interim/ls_testset.json --tasks data/interim/ls_urgency.json --n 400`
+   Isinya 400 ulasan periode test: semua ulasan periode test dari sampel v0.1 (supaya label silver bisa
+   dibandingkan dengan label manusia) ditambah ulasan baru yang diperkaya dengan cara yang sama. Keduanya
+   diacak, jadi anotator tidak tahu mana yang mana.
+2. **Tanpa petunjuk (blind).** Tugas tidak membawa tebakan aturan, label LLM, kata pemicu, rating, aspek,
+   maupun sentimen. Yang terlihat hanya teks, tanggal dan versi aplikasi. Jangan membuka label lama
+   selama menganotasi.
+3. Buat **proyek Label Studio baru** (jangan dicampur dengan proyek v0.1), tempel
+   `docs/labelstudio_config.xml`, impor `ls_testset.json`. Tombol: `1` kritis, `2` tinggi, `3` normal,
+   `4` ragu, `Ctrl+Enter` simpan. Kerjakan semua 400, sekitar 100 per sesi supaya tetap fokus.
+4. Ekspor JSON ke `data/interim/ls_testset_export.json`, lalu
+   `python scripts/labelstudio.py human data/interim/ls_testset_export.json data/annotation/human_test.jsonl --tasks data/interim/ls_testset.json`.
+   File hasil hanya berisi id dan label, jadi boleh di-commit.
+5. `python scripts/evaluate.py data/processed --baseline models/baseline --multitask models/indobert-mt --human data/annotation/human_test.jsonl`
+   Urgensi dinilai hanya terhadap label manusia (yang ragu tidak dihitung), dan skrip melaporkan seberapa
+   sering label silver v0.1 sama dengan label manusia (persentase dan Cohen's kappa).
+
+Batasan yang tetap ditulis di README: satu anotator, dan sampel diperkaya ulasan yang ditandai aturan,
+jadi angkanya bukan distribusi asli seluruh ulasan.

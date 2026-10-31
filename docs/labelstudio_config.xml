@@ -1,7 +1,14 @@
 <!-- Label Studio: Create Project -> Labeling Setup -> Custom template -> paste this.
-     Import the JSON written by `python scripts/labelstudio.py sample ...`; the rule-based guess is pre-selected. -->
+     (Existing project: Settings -> Labeling Interface -> Code -> paste this -> Save.)
+     Import the JSON written by `python scripts/labelstudio.py sample ...`; the rule-based guess is pre-selected.
+     The v0.2 test set (`testset ...`) uses the same template with nothing pre-selected (blind). -->
 <View>
-  <Header value="Seberapa mendesak ulasan ini harus dibaca tim CX hari ini?"/>
+  <Header value="Jawab dua pertanyaan, berurutan:"/>
+  <View style="font-size:13px;margin:0 0 8px">
+    <Header size="6" value="1. Apakah uang atau akun nasabah terdampak? (saldo terpotong, dana hilang, transaksi tidak dikenal, akun dikuasai orang lain) → kritis"/>
+    <Header size="6" value="2. Kalau tidak: apakah nasabah tidak bisa memakai aplikasi sama sekali? (tidak bisa login, OTP tidak masuk, aplikasi tidak bisa dibuka) → tinggi"/>
+    <Header size="6" value="Selain itu → normal. Tidak yakin setelah membaca panduan → centang Ragu."/>
+  </View>
   <Text name="text" value="$text"/>
   <View style="color:#666;font-size:13px;margin:6px 0">
     <Text name="meta" value="$meta"/>
@@ -10,5 +17,8 @@
     <Choice value="kritis" hotkey="1" hint="Uang atau akun nasabah terdampak"/>
     <Choice value="tinggi" hotkey="2" hint="Tidak bisa memakai layanan utama, uang belum terdampak"/>
     <Choice value="normal" hotkey="3" hint="Saran, pujian, keluhan ringan"/>
+  </Choices>
+  <Choices name="ragu" toName="text" choice="multiple" showInline="true">
+    <Choice value="ragu" hotkey="4" hint="Tidak yakin; ulasan ini tidak dipakai untuk training maupun test"/>
   </Choices>
 </View>

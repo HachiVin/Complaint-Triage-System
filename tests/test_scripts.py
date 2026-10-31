@@ -165,3 +165,61 @@ def test_eval_agent_number_matching():
     assert ev.matches(14020, "sebanyak 14.020 ulasan")
     assert ev.matches(0.463, "46,3% ulasan negatif")
     assert not ev.matches(310, "620 ulasan berurgensi kritis")
+
+
+def test_labelstudio_testset_is_blind_and_keeps_earlier_test_reviews(tmp_path, records):
+    from complaint_triage.data import deduplicate, split_by_time
+
+    data = tmp_path / "data.jsonl"
+    save_jsonl([r.model_copy(update={"urgency": None}) for r in records], data)
+    tasks_file = tmp_path / "tasks.json"
+    assert run("scripts/labelstudio.py", "sample", data, tasks_file, "--n", "60").returncode == 0
+    earlier = {t["data"]["id"] for t in json.loads(tasks_file.read_text(encoding="utf-8"))
+               if t["data"]["periode"] == "test"}
+    test_ids = {r.id for r in split_by_time(deduplicate(load_jsonl(data))[0])["test"]}
+    n = len(test_ids) - 3  # leave a few out, so the fresh draw has to choose
+    out = tmp_path / "testset.json"
+    res = run("scripts/labelstudio.py", "testset", data, out, "--tasks", tasks_file, "--n", n)
+    assert res.returncode == 0, res.stderr
+    tasks = json.loads(out.read_text(encoding="utf-8"))
+    ids = [t["data"]["id"] for t in tasks]
+    assert len(ids) == len(set(ids)) == n
+    assert set(ids) <= test_ids  # test period only
+    assert earlier <= set(ids)  # every v0.1 test-period review is in
+    for t in tasks:  # blind: no guess and no hint in what the annotator sees
+        assert "predictions" not in t and "annotations" not in t
+        assert set(t["data"]) == {"id", "text", "meta", "periode", "asal"}
+        assert t["data"]["meta"].startswith("Tanggal:") and "Rating" not in t["data"]["meta"]
+
+
+def test_labelstudio_human_export(tmp_path):
+    def task(i, urgency, ragu=False):
+        result = [{"from_name": "urgency", "to_name": "text", "type": "choices", "value": {"choices": [urgency]}}]
+        if ragu:
+            result.append({"from_name": "ragu", "to_name": "text", "type": "choices", "value": {"choices": ["ragu"]}})
+        return {"data": {"id": f"r{i}", "text": "x", "asal": "tambahan"}, "annotations": [{"result": result}]}
+
+    export = [task(1, "kritis"), task(2, "normal", ragu=True), task(3, "tinggi"),
+              {"data": {"id": "r4", "text": "x"}, "annotations": []}]
+    (tmp_path / "export.json").write_text(json.dumps(export), encoding="utf-8")
+    (tmp_path / "tasks.json").write_text(json.dumps(export), encoding="utf-8")
+    out = tmp_path / "human.jsonl"
+    res = run("scripts/labelstudio.py", "human", tmp_path / "export.json", out, "--tasks", tmp_path / "tasks.json")
+    assert res.returncode == 0, res.stderr
+    rows = [json.loads(x) for x in out.read_text(encoding="utf-8").splitlines()]
+    assert [(r["id"], r["urgency"], r["ragu"]) for r in rows] == [
+        ("r1", "kritis", False), ("r2", "normal", True), ("r3", "tinggi", False)]
+    assert "text" not in rows[0]  # ids and labels only
+    assert "WARNING: 1 of 4" in res.stdout
+
+
+def test_evaluate_scores_urgency_on_human_labels_only(records):
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from evaluate import apply_human
+
+    rows = [r.model_copy(update={"urgency": "normal" if i < 3 else None}) for i, r in enumerate(records[:6])]
+    human = {rows[0].id: "normal", rows[1].id: "kritis", rows[4].id: "tinggi"}
+    out, agreement = apply_human(rows, human)
+    assert [r.urgency for r in out] == ["normal", "kritis", None, None, "tinggi", None]
+    assert agreement["n"] == 2 and agreement["agreement"] == 0.5
+    assert [r.aspect for r in out] == [r.aspect for r in rows]  # other labels untouched

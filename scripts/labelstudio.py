@@ -37,6 +37,19 @@
 
        python scripts/labelstudio.py merge data/interim/brimo.jsonl data/interim/ls_export.json \
            data/annotated/brimo.jsonl --tasks data/interim/ls_urgency_crosscheck.json
+
+3. v0.2, a human-verified urgency test set. Blind tasks (no rule guess, no LLM label, no rating) for 400
+   test-period reviews: every test-period review of the v0.1 sample plus a fresh enriched draw.
+
+       python scripts/labelstudio.py testset data/interim/brimo.jsonl data/interim/ls_testset.json \
+           --tasks data/interim/ls_urgency.json --n 400
+
+   Annotate them all in a new Label Studio project, export JSON, then keep only ids and labels:
+
+       python scripts/labelstudio.py human data/interim/ls_testset_export.json \
+           data/annotation/human_test.jsonl --tasks data/interim/ls_testset.json
+
+   scripts/evaluate.py --human data/annotation/human_test.jsonl then scores urgency against these labels.
 """
 
 from __future__ import annotations
@@ -49,7 +62,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from complaint_triage.data import deduplicate, load_jsonl, save_jsonl, split_by_time, summary  # noqa: E402
+from complaint_triage.data import Review, deduplicate, load_jsonl, save_jsonl, split_by_time, summary  # noqa: E402
 from complaint_triage.rules import urgency_by_rules  # noqa: E402
 
 PERIOD_ORDER = {"test": 0, "val": 1, "train": 2}
@@ -197,6 +210,92 @@ def silver(dataset: str, tasks_path: str, dst: str, provenance: str = "docs/labe
     print(f"provenance -> {provenance}  (NOT human-verified; say so wherever results are shown)")
 
 
+def testset(dataset: str, dst: str, tasks_path: str | None = None, n: int = 400, seed: int = 7) -> None:
+    """Label Studio tasks for a human-verified urgency test set (v0.2): test-period reviews only, blind.
+
+    Blind means nothing that hints at an answer is shown: no rule guess, no LLM label, no matched keywords,
+    no rating, aspect or sentiment. The annotator sees the review text, its date and the app version.
+    Every test-period review from the v0.1 sample (tasks_path) is included, so the silver labels can be
+    compared with human ones; the rest is a fresh draw from the test period, enriched the same way as
+    `sample` (20% rules-kritis, 20% rules-tinggi, 35% negative, 25% other), and the two are shuffled
+    together so the annotator cannot tell which is which."""
+    every, _ = deduplicate(load_jsonl(dataset))
+    test_rows = split_by_time(every)["test"]
+    by_id = {r.id: r for r in test_rows}
+    earlier: list[str] = []
+    if tasks_path:
+        earlier = [t["data"]["id"] for t in json.loads(Path(tasks_path).read_text(encoding="utf-8"))
+                   if t["data"].get("periode") == "test" and t["data"]["id"] in by_id]
+    if len(earlier) > n:
+        sys.exit(f"--n {n} is smaller than the {len(earlier)} test-period reviews already sampled")
+    taken = set(earlier)
+    rng = random.Random(seed)
+    rule = {r.id: urgency_by_rules(r.text)[0] for r in test_rows}
+    pools = {"kritis": [], "tinggi": [], "negatif": [], "lain": []}
+    for r in test_rows:
+        if r.id in taken:
+            continue
+        if rule[r.id] in ("kritis", "tinggi"):
+            pools[rule[r.id]].append(r)
+        elif r.sentiment == "negatif":
+            pools["negatif"].append(r)
+        else:
+            pools["lain"].append(r)
+    extra_n = n - len(earlier)
+    extra: list[Review] = []
+    for name, share in (("kritis", 0.2), ("tinggi", 0.2), ("negatif", 0.35), ("lain", 0.25)):
+        rng.shuffle(pools[name])
+        extra += pools[name][: int(extra_n * share)]
+    if len(extra) < extra_n:  # a small pool (few rules-kritis reviews) is topped up from what is left
+        used = {r.id for r in extra}
+        left = [r for name in pools for r in pools[name] if r.id not in used]
+        rng.shuffle(left)
+        extra += left[: extra_n - len(extra)]
+    picked = [by_id[i] for i in earlier] + extra
+    if len(picked) < n:
+        print(f"WARNING: the test period has only {len(picked)} reviews to offer, fewer than --n {n}")
+    origin = {r.id: "sampel_v01" for r in picked[: len(earlier)]}
+    rng.shuffle(picked)
+    tasks = [{"data": {"id": r.id, "text": r.text,
+                       "meta": f"Tanggal: {r.date or '-'} · Versi aplikasi: {r.app_version or '-'}",
+                       "periode": "test", "asal": origin.get(r.id, "tambahan")}} for r in picked]
+    Path(dst).parent.mkdir(parents=True, exist_ok=True)
+    Path(dst).write_text(json.dumps(tasks, ensure_ascii=False, indent=1), encoding="utf-8")
+    flagged = sum(rule[r.id] in ("kritis", "tinggi") for r in picked)
+    print(f"{len(tasks)} blind test-period tasks -> {dst}")
+    print(f"  {len(earlier)} from the v0.1 sample, {len(extra)} new; rules flag {flagged} of them "
+          f"({sum(rule[r.id] == 'kritis' for r in picked)} kritis)")
+    print(f"  test period: {len(test_rows)} reviews, {test_rows[0].date} to {test_rows[-1].date}")
+
+
+def human(export: str, dst: str, tasks_path: str | None = None) -> None:
+    """Label Studio export of the `testset` project -> data/annotation/human_test.jsonl (id, urgency, ragu).
+    Only ids and labels are written, so the file is small enough to commit next to second_opinion.jsonl."""
+    out, ragu = [], 0
+    for task in json.loads(Path(export).read_text(encoding="utf-8")):
+        anns = [a for a in task.get("annotations", []) if not a.get("was_cancelled")]
+        if not anns:
+            continue
+        result = anns[-1]["result"]
+        choice = _choice(result, "urgency")
+        if not choice:
+            continue
+        unsure = bool(_choice(result, "ragu"))
+        ragu += unsure
+        out.append({"id": task["data"]["id"], "urgency": choice, "ragu": unsure,
+                    "asal": task["data"].get("asal", "-")})
+    out.sort(key=lambda x: x["id"])
+    Path(dst).parent.mkdir(parents=True, exist_ok=True)
+    Path(dst).write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in out), encoding="utf-8")
+    counts = {k: sum(x["urgency"] == k and not x["ragu"] for x in out) for k in ("kritis", "tinggi", "normal")}
+    print(f"{len(out)} human labels -> {dst}  ({ragu} marked ragu, left out of scoring)")
+    print(f"  usable: {counts}")
+    if tasks_path:
+        total = len(json.loads(Path(tasks_path).read_text(encoding="utf-8")))
+        if len(out) < total:
+            print(f"WARNING: {total - len(out)} of {total} tasks are not annotated yet; the test set is incomplete")
+
+
 def _choice(result: list[dict], name: str) -> str | None:
     return next((x["value"]["choices"][0] for x in result
                  if x.get("type") == "choices" and x.get("from_name") == name and x["value"].get("choices")), None)
@@ -269,11 +368,25 @@ def main() -> None:
     m.add_argument("export")
     m.add_argument("dst")
     m.add_argument("--tasks", help="the task file imported into Label Studio, to check the test period is complete")
+    ts = sub.add_parser("testset")
+    ts.add_argument("dataset")
+    ts.add_argument("dst")
+    ts.add_argument("--tasks", help="the v0.1 task file (from `sample`); its test-period reviews are included")
+    ts.add_argument("--n", type=int, default=400)
+    ts.add_argument("--seed", type=int, default=7)
+    h = sub.add_parser("human")
+    h.add_argument("export")
+    h.add_argument("dst")
+    h.add_argument("--tasks", help="the task file from `testset`, to check every task is annotated")
     args = ap.parse_args()
     if args.cmd == "sample":
         sample(args.src, args.dst, args.n, args.seed)
     elif args.cmd == "crosscheck":
         crosscheck(args.tasks, args.second_opinion, args.dst)
+    elif args.cmd == "testset":
+        testset(args.dataset, args.dst, args.tasks, args.n, args.seed)
+    elif args.cmd == "human":
+        human(args.export, args.dst, args.tasks)
     elif args.cmd == "silver":
         silver(args.dataset, args.crosscheck, args.dst, args.provenance)
     else:
